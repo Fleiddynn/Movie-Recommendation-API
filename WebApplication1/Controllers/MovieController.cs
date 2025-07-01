@@ -47,7 +47,7 @@ namespace WebApplication1.Controllers
             return CreatedAtAction(nameof(GetMovie), new { id = newMovie.Id }, newMovie);
         }
 
-        [HttpPut("{id}")]
+                [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMovie(int id, [FromBody] MovieApi updatedMovie)
         {
             var movie = await _context.Movies.FindAsync(id);
@@ -61,7 +61,6 @@ namespace WebApplication1.Controllers
             movie.Cast = updatedMovie.Cast;
             movie.Director = updatedMovie.Director;
             movie.Categories = updatedMovie.Categories;
-            movie.IMDB = updatedMovie.IMDB;
             movie.Length = updatedMovie.Length;
             movie.ReleaseDate = updatedMovie.ReleaseDate;
 
@@ -80,22 +79,34 @@ namespace WebApplication1.Controllers
             return NoContent();
         }
 
+
         [HttpPatch("{id}")]
         public async Task<IActionResult> PartiallyUpdateMovie(int id, [FromBody] JsonPatchDocument<MovieApi> patchDoc)
         {
-            var movieToPatch = await _context.Movies.FindAsync(id);
+            if (patchDoc.Operations.Any(op => op.path.ToLower() == "/imdb"))
+            {
+                return BadRequest("Film puanı güncellenemez.");
+            }
+
+            var movieToPatch = await _context.Movies.FirstOrDefaultAsync(m => m.Id == id);
 
             if (movieToPatch == null)
             {
-                return NotFound($"Aradığınız film bulunamadı.");
+                return NotFound("Aradığınız film bulunamadı.");
             }
 
             patchDoc.ApplyTo(movieToPatch, ModelState);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMovie(int id)
