@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebApplication1.MovieRecData;
@@ -12,9 +13,11 @@ using WebApplication1.MovieRecData;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(MDbContext))]
-    partial class MDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250701204529_doubleIMDB")]
+    partial class doubleIMDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

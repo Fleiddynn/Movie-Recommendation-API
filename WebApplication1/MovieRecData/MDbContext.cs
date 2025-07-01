@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebApplication1;
+using WebApplication1.Entitites;
 
 namespace WebApplication1.MovieRecData 
 {
@@ -9,13 +9,13 @@ namespace WebApplication1.MovieRecData
         {
         }
 
-        public DbSet<MovieApi> Movies { get; set; } = null!;
+        public DbSet<Movie> Movies { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<MovieApi>(entity =>
+            modelBuilder.Entity<Movie>(entity =>
             {
                 entity.Property(e => e.Cast)
                       .HasColumnType("jsonb");

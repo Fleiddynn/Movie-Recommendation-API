@@ -4,7 +4,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.MovieRecData;
-using WebApplication1;
+using WebApplication1.Entitites;
 
 namespace WebApplication1.Controllers
 {
@@ -20,13 +20,13 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MovieApi>>> GetMovies()
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
             return Ok(await _context.Movies.ToListAsync());
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<MovieApi>> GetMovie(int id)
+        public async Task<ActionResult<Movie>> GetMovie(int id)
         {
             var movie = await _context.Movies.FindAsync(id);
 
@@ -39,7 +39,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<MovieApi>> AddMovie([FromBody] MovieApi newMovie)
+        public async Task<ActionResult<Movie>> AddMovie([FromBody] Movie newMovie)
         {
             _context.Movies.Add(newMovie);
             await _context.SaveChangesAsync();
@@ -47,25 +47,25 @@ namespace WebApplication1.Controllers
             return CreatedAtAction(nameof(GetMovie), new { id = newMovie.Id }, newMovie);
         }
 
-                [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMovie(int id, [FromBody] MovieApi updatedMovie)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateMovie(int id, [FromBody] Movie updatedMovie)
         {
-            var movie = await _context.Movies.FindAsync(id);
-            if (movie == null)
-            {
-                return NotFound($"Aradığınız film bulunamadı.");
-            }
-
-            movie.Title = updatedMovie.Title;
-            movie.Description = updatedMovie.Description;
-            movie.Cast = updatedMovie.Cast;
-            movie.Director = updatedMovie.Director;
-            movie.Categories = updatedMovie.Categories;
-            movie.Length = updatedMovie.Length;
-            movie.ReleaseDate = updatedMovie.ReleaseDate;
-
             try
             {
+                var movie = await _context.Movies.FindAsync(id);
+                if (movie == null)
+                {
+                    return NotFound($"Aradığınız film bulunamadı.");
+                }
+
+                movie.Title = updatedMovie.Title;
+                movie.Description = updatedMovie.Description;
+                movie.Cast = updatedMovie.Cast;
+                movie.Director = updatedMovie.Director;
+                movie.Categories = updatedMovie.Categories;
+                movie.Length = updatedMovie.Length;
+                movie.ReleaseDate = updatedMovie.ReleaseDate;
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -75,13 +75,17 @@ namespace WebApplication1.Controllers
                     return NotFound();
                 }
             }
+            catch(Exception ex)
+            {
+                return BadRequest($"Güncelleme sırasında bir hata oluştu: {ex.Message}");
+            }
 
             return NoContent();
         }
 
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PartiallyUpdateMovie(int id, [FromBody] JsonPatchDocument<MovieApi> patchDoc)
+        public async Task<IActionResult> PartiallyUpdateMovie(int id, [FromBody] JsonPatchDocument<Movie> patchDoc)
         {
             if (patchDoc.Operations.Any(op => op.path.ToLower() == "/imdb"))
             {
@@ -120,7 +124,7 @@ namespace WebApplication1.Controllers
             _context.Movies.Remove(movieToDelete);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok();
         }
     }
 }
