@@ -5,6 +5,12 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 using DotNetEnv;
+using Microsoft.AspNetCore.Identity;
+using WebApplication1.UserData;
+using WebApplication1.Entitites;
+
+
+
 
 Env.Load();
 
@@ -30,6 +36,9 @@ builder.Services.AddDbContext<UserDbContext>(options =>
 {
     options.UseNpgsql(userDataSource);
 });
+
+builder.Services.AddIdentity<User, IdentityRole>()
+   .AddEntityFrameworkStores<UserDbContext>();
 
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
