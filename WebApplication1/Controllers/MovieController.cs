@@ -22,20 +22,33 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
-            return Ok(await _context.Movies.ToListAsync());
+            var movies = await _context.Movies.ToListAsync();
+            List<MovieDTO> movieDTOs = new List<MovieDTO>();
+            if (movies == null || !movies.Any())
+            {
+                return NotFound("Hiç film bulunamadı.");
+            }
+            else
+            {
+                foreach (var movie in movies){
+                    movieDTOs.Add(new MovieDTO(movie));
+                }
+            }
+            return Ok(movieDTOs);
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Movie>> GetMovie(int id)
+        public async Task<ActionResult<MovieDTO>> GetMovie(int id)
         {
             var movie = await _context.Movies.FindAsync(id);
+            MovieDTO movieDTO = new MovieDTO(movie);
 
-            if (movie == null)
+            if (movieDTO == null)
             {
                 return NotFound($"Aradığınız film bulunamadı.");
             }
 
-            return Ok(movie);
+            return Ok(movieDTO);
         }
 
         [HttpPost]
