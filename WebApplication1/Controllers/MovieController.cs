@@ -1,14 +1,141 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.JsonPatch;
+using WebApplication1.MovieRecData;
+using WebApplication1.Entitites;
 
 namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class MovieController : Controller
+    public class MoviesController : ControllerBase
     {
-        [HttpPost]
-        public ActionResult<MovieInfo> AddMovie([FromBody] MovieInfo newMovie)
+        private readonly MDbContext _context;
+
+        public MoviesController(MDbContext context)
         {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
+        {
+            var movies = await _context.Movies.ToListAsync();
+            List<MovieDTO> movieDTOs = new List<MovieDTO>();
+            if (movies == null || !movies.Any())
+            {
+                return NotFound("Hiç film bulunamadı.");
+            }
+            else
+            {
+                foreach (var movie in movies){
+                    movieDTOs.Add(new MovieDTO(movie));
+                }
+            }
+            return Ok(movieDTOs);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MovieDTO>> GetMovie(int id)
+        {
+            var movie = await _context.Movies.FindAsync(id);
+            MovieDTO movieDTO = new MovieDTO(movie);
+
+            if (movieDTO == null)
+            {
+                return NotFound($"Aradığınız film bulunamadı.");
+            }
+
+            return Ok(movieDTO);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<Movie>> AddMovie([FromBody] Movie newMovie)
+        {
+            _context.Movies.Add(newMovie);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetMovie), new { id = newMovie.Id }, newMovie);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateMovie(int id, [FromBody] Movie updatedMovie)
+        {
+            try
+            {
+                var movie = await _context.Movies.FindAsync(id);
+                if (movie == null)
+                {
+                    return NotFound($"Aradığınız film bulunamadı.");
+                }
+
+                movie.Title = updatedMovie.Title;
+                movie.Description = updatedMovie.Description;
+                movie.Cast = updatedMovie.Cast;
+                movie.Director = updatedMovie.Director;
+                movie.Categories = updatedMovie.Categories;
+                movie.Length = updatedMovie.Length;
+                movie.ReleaseDate = updatedMovie.ReleaseDate;
+
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!await _context.Movies.AnyAsync(e => e.Id == id))
+                {
+                    return NotFound();
+                }
+            }
+            catch(Exception ex)
+            {
+                return BadRequest($"Güncelleme sırasında bir hata oluştu: {ex.Message}");
+            }
+
+            return NoContent();
+        }
+
+
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> PartiallyUpdateMovie(int id, [FromBody] JsonPatchDocument<Movie> patchDoc)
+        {
+            if (patchDoc.Operations.Any(op => op.path.ToLower() == "/imdb"))
+            {
+                return BadRequest("Film puanı güncellenemez.");
+            }
+
+            var movieToPatch = await _context.Movies.FirstOrDefaultAsync(m => m.Id == id);
+
+            if (movieToPatch == null)
+            {
+                return NotFound("Aradığınız film bulunamadı.");
+            }
+
+            patchDoc.ApplyTo(movieToPatch, ModelState);
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMovie(int id)
+        {
+            var movieToDelete = await _context.Movies.FindAsync(id);
+            if (movieToDelete == null)
+            {
+                return NotFound($"Silmeye çalıştığınız film bulunamadı.");
+            }
+
+            _context.Movies.Remove(movieToDelete);
+            await _context.SaveChangesAsync();
 
             return Ok();
         }
