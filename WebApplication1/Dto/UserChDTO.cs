@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace WebApplication1.Entitites
 {
-    public class UserRegDTO
+    public class UserChDTO
     {
         public required string first_name { get; set; }
         public required string last_name { get; set; }

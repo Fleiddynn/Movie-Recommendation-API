@@ -1,11 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.Entitites;
 using WebApplication1.UserData;
 using BCrypt.Net;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace WebApplication1.Controllers
 {
@@ -44,8 +49,178 @@ namespace WebApplication1.Controllers
             }
             return Ok(userDTO);
         }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] UserLoginDTO dto)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == dto.email);
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.password, user.password))
+            {
+                return Unauthorized("E-posta veya şifre yanlış.");
+            }
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.email),
+                new Claim("first_name", user.first_name),
+                new Claim("last_name", user.last_name)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Issuer"],
+                audience: HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(2),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return Ok(new
+            {
+                token = tokenString,
+                user = new UserDTO(user)
+            });
+        }
+        [HttpGet("login/google")]
+        public IActionResult GoogleLogin()
+        {
+            var returnUrl = "/";
+            var properties = new AuthenticationProperties { RedirectUri = Url.Action("GoogleResponse", new { returnUrl }) };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+        [HttpGet("/login/google-response")]
+        public async Task<IActionResult> GoogleResponse(string returnUrl = "/")
+        {
+            var authenticateResult = await HttpContext.AuthenticateAsync("Cookies");
+            if (!authenticateResult.Succeeded)
+                return BadRequest();
+
+            var email = authenticateResult.Principal.FindFirst(ClaimTypes.Email)?.Value;
+            var firstName = authenticateResult.Principal.FindFirst(ClaimTypes.GivenName)?.Value;
+            var lastName = authenticateResult.Principal.FindFirst(ClaimTypes.Surname)?.Value;
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    email = email,
+                    first_name = firstName ?? "",
+                    last_name = lastName ?? "",
+                    password = "",
+                    social_login_provider = "Google",
+                    created_at = DateTime.UtcNow,
+                    updated_at = DateTime.UtcNow
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.email),
+                new Claim("first_name", user.first_name),
+                new Claim("last_name", user.last_name)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Issuer"],
+                audience: HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1000),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return Ok(new
+            {
+                token = tokenString,
+                user = new UserDTO(user)
+            });
+        }
+        [HttpGet("facebook-login")]
+        public IActionResult FacebookLogin(string returnUrl = "/")
+        {
+            var properties = new AuthenticationProperties { RedirectUri = Url.Action("FacebookResponse", new { returnUrl }) };
+            return Challenge(properties, "Facebook");
+        }
+
+        [HttpGet("facebook-response")]
+        public async Task<IActionResult> FacebookResponse(string returnUrl = "/")
+        {
+            var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (!authenticateResult.Succeeded)
+                return BadRequest();
+
+            var email = authenticateResult.Principal.FindFirst(ClaimTypes.Email)?.Value;
+            var name = authenticateResult.Principal.FindFirst(ClaimTypes.Name)?.Value;
+
+            string firstName = "";
+            string lastName = "";
+            if (!string.IsNullOrEmpty(name))
+            {
+                var parts = name.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                firstName = parts.Length > 0 ? parts[0] : "";
+                lastName = parts.Length > 1 ? parts[1] : "";
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    email = email,
+                    first_name = firstName,
+                    last_name = lastName,
+                    password = "",
+                    social_login_provider = "Facebook",
+                    created_at = DateTime.UtcNow,
+                    updated_at = DateTime.UtcNow
+                };
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+            }
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.email),
+                new Claim("first_name", user.first_name),
+                new Claim("last_name", user.last_name)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Issuer"],
+                audience: HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1000),
+                signingCredentials: creds
+            );
+
+            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+            return Ok(new
+            {
+                token = tokenString,
+                user = new UserDTO(user)
+            });
+        }
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] UserRegDTO dto)
+        public async Task<IActionResult> Register([FromBody] UserChDTO dto)
         {
             if (await _context.Users.AnyAsync(u => u.Email == dto.email))
             {
@@ -69,23 +244,43 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] User updatedUser)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserChDTO dto)
         {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound($"Aradığınız kullanıcı bulunamadı.");
+            }
+
+            if (!string.IsNullOrEmpty(dto.email) && dto.email != user.email)
+            {
+                if (await _context.Users.AnyAsync(u => u.Email == dto.email))
+                {
+                    return BadRequest("Bu e-posta adresiyle zaten bir kullanıcı kayıtlı.");
+                }
+                user.email = dto.email;
+            }
+
+            if (!string.IsNullOrEmpty(dto.first_name))
+                user.first_name = dto.first_name;
+
+            if (!string.IsNullOrEmpty(dto.last_name))
+                user.last_name = dto.last_name;
+
+            if (!string.IsNullOrEmpty(dto.password))
+                user.password = BCrypt.Net.BCrypt.HashPassword(dto.password);
+
+            user.updated_at = DateTime.UtcNow;
+
             try
             {
-                if (id.ToString() != updatedUser.Id)
-                {
-                    return BadRequest("Kullanıcı ID'leri değiştirilemez.");
-                }
-                _context.Entry(updatedUser).State = EntityState.Modified;
-
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
                 if (!await _context.Users.AnyAsync(e => e.Id == id.ToString()))
                 {
-                    return NotFound($"{id} ye sahip kullanıcı bulunamadı.");
+                    return NotFound($"{id} idsine sahip kullanıcı bulunamadı.");
                 }
             }
             catch (Exception ex)
@@ -94,28 +289,45 @@ namespace WebApplication1.Controllers
             }
             return Ok();
         }
+
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PartiallyUpdateUser(int id, [FromBody] JsonPatchDocument<User> patchDoc)
+        public async Task<IActionResult> PartiallyUpdateUser(int id, [FromBody] UserChDTO dto)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
                 return NotFound($"Aradığınız kullanıcı bulunamadı.");
             }
-            patchDoc.ApplyTo(user, ModelState);
-            if (!ModelState.IsValid)
+
+            if (!string.IsNullOrEmpty(dto.email) && dto.email != user.email)
             {
-                return BadRequest(ModelState);
+                if (await _context.Users.AnyAsync(u => u.Email == dto.email))
+                {
+                    return BadRequest("Bu e-posta adresiyle zaten bir kullanıcı kayıtlı.");
+                }
+                user.email = dto.email;
             }
+
+            if (!string.IsNullOrEmpty(dto.first_name))
+                user.first_name = dto.first_name;
+
+            if (!string.IsNullOrEmpty(dto.last_name))
+                user.last_name = dto.last_name;
+
+            if (!string.IsNullOrEmpty(dto.password))
+                user.password = BCrypt.Net.BCrypt.HashPassword(dto.password);
+
+            user.updated_at = DateTime.UtcNow;
+
             try
             {
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Users.AnyAsync(e => e.Id== id.ToString()))
+                if (!await _context.Users.AnyAsync(e => e.Id == id.ToString()))
                 {
-                    return NotFound($"{id} ye sahip kullanıcı bulunamadı.");
+                    return NotFound($"{id} idsine sahip kullanıcı bulunamadı.");
                 }
             }
             catch (Exception ex)
