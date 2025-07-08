@@ -18,16 +18,16 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
-        private readonly UserDbContext _context;
+        private readonly IUserRepository _userRepository;
         public UserController(UserDbContext context)
         {
-            _context = context;
+            _userRepository = new UserRepository(context);
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
         {
-            var users = await _context.Users.ToListAsync();
+            var users = await _userRepository.GetUsersAsync();
             List<UserDTO> userDTOs = new List<UserDTO>();
             if (users == null || !users.Any())
             {
@@ -41,7 +41,7 @@ namespace WebApplication1.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<UserDTO>> GetUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
             UserDTO userDTO = new UserDTO(user);
             if (userDTO == null)
             {
@@ -52,7 +52,8 @@ namespace WebApplication1.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginDTO dto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == dto.email);
+            var user = await _userRepository.GetUsersAsync()
+                .ContinueWith(t => t.Result.FirstOrDefault(u => u.email == dto.email));
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.password, user.password))
             {
                 return Unauthorized("E-posta veya şifre yanlış.");
@@ -103,7 +104,8 @@ namespace WebApplication1.Controllers
             var firstName = authenticateResult.Principal.FindFirst(ClaimTypes.GivenName)?.Value;
             var lastName = authenticateResult.Principal.FindFirst(ClaimTypes.Surname)?.Value;
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == email);
+            var user = await _userRepository.GetUsersAsync()
+                .ContinueWith(t => t.Result.FirstOrDefault(u => u.email == email));
             if (user == null)
             {
                 user = new User
@@ -116,8 +118,8 @@ namespace WebApplication1.Controllers
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
                 };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                _userRepository.Create(user);
+                await _userRepository.Update(user);
             }
 
             var claims = new[]
@@ -174,7 +176,7 @@ namespace WebApplication1.Controllers
                 lastName = parts.Length > 1 ? parts[1] : "";
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.email == email);
+            var user = await _userRepository.GetUsersAsync().ContinueWith(t => t.Result.FirstOrDefault(u => u.email == email));
             if (user == null)
             {
                 user = new User
@@ -187,8 +189,8 @@ namespace WebApplication1.Controllers
                     created_at = DateTime.UtcNow,
                     updated_at = DateTime.UtcNow
                 };
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                _userRepository.Create(user);
+                await _userRepository.Update(user);
             }
 
             var claims = new[]
@@ -222,7 +224,8 @@ namespace WebApplication1.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserChDTO dto)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == dto.email))
+            if (await _userRepository.GetUsersAsync()
+                .ContinueWith(t => t.Result.Any(u => u.email == dto.email)))
             {
                 return BadRequest("Bu e-posta adresiyle zaten bir kullanıcı kayıtlı.");
             }
@@ -237,8 +240,8 @@ namespace WebApplication1.Controllers
                 updated_at = DateTime.UtcNow
             };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+            _userRepository.Create(user);
+            await _userRepository.Update(user);
 
             return Ok();
         }
@@ -246,7 +249,7 @@ namespace WebApplication1.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, [FromBody] UserChDTO dto)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound($"Aradığınız kullanıcı bulunamadı.");
@@ -254,7 +257,8 @@ namespace WebApplication1.Controllers
 
             if (!string.IsNullOrEmpty(dto.email) && dto.email != user.email)
             {
-                if (await _context.Users.AnyAsync(u => u.Email == dto.email))
+                if (await _userRepository.GetUsersAsync()
+                    .ContinueWith(t => t.Result.Any(u => u.email == dto.email)))
                 {
                     return BadRequest("Bu e-posta adresiyle zaten bir kullanıcı kayıtlı.");
                 }
@@ -274,11 +278,12 @@ namespace WebApplication1.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _userRepository.Update(user);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Users.AnyAsync(e => e.Id == id.ToString()))
+                if (!await _userRepository.GetUsersAsync()
+                    .ContinueWith(t => t.Result.Any(e => e.Id == id.ToString())))
                 {
                     return NotFound($"{id} idsine sahip kullanıcı bulunamadı.");
                 }
@@ -293,7 +298,7 @@ namespace WebApplication1.Controllers
         [HttpPatch("{id}")]
         public async Task<IActionResult> PartiallyUpdateUser(int id, [FromBody] UserChDTO dto)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound($"Aradığınız kullanıcı bulunamadı.");
@@ -301,7 +306,8 @@ namespace WebApplication1.Controllers
 
             if (!string.IsNullOrEmpty(dto.email) && dto.email != user.email)
             {
-                if (await _context.Users.AnyAsync(u => u.Email == dto.email))
+                if (await _userRepository.GetUsersAsync()
+                    .ContinueWith(t => t.Result.Any(u => u.email == dto.email)))
                 {
                     return BadRequest("Bu e-posta adresiyle zaten bir kullanıcı kayıtlı.");
                 }
@@ -321,11 +327,11 @@ namespace WebApplication1.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _userRepository.Update(user);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Users.AnyAsync(e => e.Id == id.ToString()))
+                if (!await _userRepository.GetUsersAsync().ContinueWith(t => t.Result.Any(e => e.Id == id.ToString())))
                 {
                     return NotFound($"{id} idsine sahip kullanıcı bulunamadı.");
                 }
@@ -339,13 +345,13 @@ namespace WebApplication1.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
             {
                 return NotFound($"Aradığınız kullanıcı bulunamadı.");
             }
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+            await _userRepository.Delete(id);
+            await _userRepository.Update(user);
             return NoContent();
 
         }
