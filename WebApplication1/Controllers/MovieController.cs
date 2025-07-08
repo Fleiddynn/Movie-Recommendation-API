@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.MovieRecData;
 using WebApplication1.Entitites;
+using WebApplication1.MovieData;
 
 namespace WebApplication1.Controllers
 {
@@ -12,17 +13,17 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class MoviesController : ControllerBase
     {
-        private readonly MDbContext _context;
+        private readonly MovieRepository _movieRepository;
 
         public MoviesController(MDbContext context)
         {
-            _context = context;
+            _movieRepository = new MovieRepository(context);
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
         {
-            var movies = await _context.Movies.ToListAsync();
+            var movies = await _movieRepository.GetMoviesAsync();
             List<MovieDTO> movieDTOs = new List<MovieDTO>();
             if (movies == null || !movies.Any())
             {
@@ -40,7 +41,7 @@ namespace WebApplication1.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<MovieDTO>> GetMovie(int id)
         {
-            var movie = await _context.Movies.FindAsync(id);
+            var movie = await _movieRepository.GetMovieByIdAsync(id);
             MovieDTO movieDTO = new MovieDTO(movie);
 
             if (movieDTO == null)
@@ -54,8 +55,8 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public async Task<ActionResult<Movie>> AddMovie([FromBody] Movie newMovie)
         {
-            _context.Movies.Add(newMovie);
-            await _context.SaveChangesAsync();
+            _movieRepository.Create(newMovie);
+            await _movieRepository.Update(newMovie);
 
             return CreatedAtAction(nameof(GetMovie), new { id = newMovie.Id }, newMovie);
         }
@@ -65,7 +66,7 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var movie = await _context.Movies.FindAsync(id);
+                var movie = await _movieRepository.GetMovieByIdAsync(id);
                 if (movie == null)
                 {
                     return NotFound($"Aradığınız film bulunamadı.");
@@ -79,11 +80,11 @@ namespace WebApplication1.Controllers
                 movie.Length = updatedMovie.Length;
                 movie.ReleaseDate = updatedMovie.ReleaseDate;
 
-                await _context.SaveChangesAsync();
+                await _movieRepository.Update(movie);
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _context.Movies.AnyAsync(e => e.Id == id))
+                if (!await _movieRepository.GetMovieByIdAsync(id).ContinueWith(t => t.Result != null))
                 {
                     return NotFound();
                 }
@@ -105,7 +106,7 @@ namespace WebApplication1.Controllers
                 return BadRequest("Film puanı güncellenemez.");
             }
 
-            var movieToPatch = await _context.Movies.FirstOrDefaultAsync(m => m.Id == id);
+            var movieToPatch = await _movieRepository.GetMovieByIdAsync(id);
 
             if (movieToPatch == null)
             {
@@ -119,7 +120,7 @@ namespace WebApplication1.Controllers
                 return BadRequest(ModelState);
             }
 
-            await _context.SaveChangesAsync();
+            await _movieRepository.Update(movieToPatch);
 
             return NoContent();
         }
@@ -128,14 +129,14 @@ namespace WebApplication1.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMovie(int id)
         {
-            var movieToDelete = await _context.Movies.FindAsync(id);
-            if (movieToDelete == null)
+            var movieToDelete = await _movieRepository.GetMovieByIdAsync(id);
+            if (movieToDelete == null)  
             {
                 return NotFound($"Silmeye çalıştığınız film bulunamadı.");
             }
 
-            _context.Movies.Remove(movieToDelete);
-            await _context.SaveChangesAsync();
+            _movieRepository.Delete(id);
+            await _movieRepository.Update(movieToDelete);
 
             return Ok();
         }
