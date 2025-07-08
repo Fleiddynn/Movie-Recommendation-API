@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.MovieRecData;
+using WebApplication1.MovieData;
 using WebApplication1.UserData;
 using Npgsql;
 using DotNetEnv;
@@ -95,6 +96,7 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 
 var app = builder.Build();
 

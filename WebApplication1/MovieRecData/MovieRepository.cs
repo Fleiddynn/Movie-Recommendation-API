@@ -1,0 +1,46 @@
+﻿using WebApplication1.Entitites;
+using WebApplication1.MovieRecData;
+
+namespace WebApplication1.MovieData
+{
+    public class MovieRepository : IMovieRepository
+    {
+        private readonly MDbContext _context;
+        public MovieRepository(MDbContext context)
+        {
+            _context = context;
+        }
+        public Task<List<Movie>> GetMoviesAsync()
+        {
+            var movies = _context.Movies.ToList();
+            return Task.FromResult(movies);
+        }
+        public Task<Movie?> GetMovieByIdAsync(int id)
+        {
+            var movie = _context.Movies.Find(id);
+            return Task.FromResult(movie);
+        }
+        public Task<Movie> Create(Movie movie)
+        {
+            _context.Movies.Add(movie);
+            _context.SaveChanges();
+            return Task.FromResult(movie);
+        }
+        public Task<Movie?> Update(Movie movie)
+        {
+            _context.Movies.Update(movie);
+            _context.SaveChanges();
+            return Task.FromResult(movie);
+        }
+        public Task<Movie?> Delete(int id)
+        {
+            var movie = _context.Movies.Find(id);
+            if (movie != null)
+            {
+                _context.Movies.Remove(movie);
+                _context.SaveChanges();
+            }
+            return Task.FromResult(movie);
+        }
+    }
+}
