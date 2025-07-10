@@ -1,6 +1,6 @@
 ﻿using WebApplication1.Entitites;
 
-namespace WebApplication1.UserData
+namespace WebApplication1.DbContexts.UserData
 {
     public class UserRepository : IUserRepository
     {

@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.Entitites;
-using WebApplication1.UserData;
+using WebApplication1.DbContexts.UserData;
 using BCrypt.Net;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.DbContexts.UserData;
 
 namespace WebApplication1.Controllers
 {

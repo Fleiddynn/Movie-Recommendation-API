@@ -2,7 +2,7 @@
 using WebApplication1.Entitites;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
-namespace WebApplication1.UserData
+namespace WebApplication1.DbContexts.UserData
 {
     public class UserDbContext : IdentityDbContext<User>
     {

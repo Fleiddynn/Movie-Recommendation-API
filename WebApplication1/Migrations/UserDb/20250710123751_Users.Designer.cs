@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using WebApplication1.UserData;
+using WebApplication1.DbContexts.UserData;
 
 #nullable disable
 
 namespace WebApplication1.Migrations.UserDb
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20250702172727_UserDB")]
-    partial class UserDB
+    [Migration("20250710123751_Users")]
+    partial class Users
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

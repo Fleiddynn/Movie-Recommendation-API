@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using WebApplication1.MovieRecData;
-using WebApplication1.MovieData;
-using WebApplication1.UserData;
 using Npgsql;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
@@ -12,11 +9,35 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Facebook;
+using WebApplication1.DbContexts.UserData;
+using WebApplication1.DbContexts.MovieRecData;
+using WebApplication1.DbContexts;
+using WebApplication1.DbContexts.CategoryData;
 
 
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+
+var movieWCategoryConnectionString = builder.Configuration.GetConnectionString("MovieWCategoryConnection");
+var movieWCategoryDataSourceBuilder = new NpgsqlDataSourceBuilder(movieWCategoryConnectionString);
+movieWCategoryDataSourceBuilder.EnableDynamicJson();
+var movieWCategoryDataSource = movieWCategoryDataSourceBuilder.Build();
+
+builder.Services.AddDbContext<MovieWCategoryDbContext>(options =>
+{
+    options.UseNpgsql(movieWCategoryDataSource);
+});
+
+var CategoryConnectionString = builder.Configuration.GetConnectionString("CategoryConnection");
+var categoryDataSourceBuilder = new NpgsqlDataSourceBuilder(CategoryConnectionString);
+categoryDataSourceBuilder.EnableDynamicJson();
+var categoryDataSource = categoryDataSourceBuilder.Build();
+
+builder.Services.AddDbContext<CategoryDbContext>(options =>
+{
+    options.UseNpgsql(categoryDataSource);
+});
 
 var movieConnectionString = builder.Configuration.GetConnectionString("MovieConnection");
 
