@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Entitites;
 using WebApplication1.DbContexts.CategoryData;
+using WebApplication1.Dto;
 
 namespace WebApplication1.Controllers
 {
@@ -22,21 +23,27 @@ namespace WebApplication1.Controllers
         public async Task<ActionResult<IEnumerable<Category>>> GetCategories()
         {
             var categories = await _context.Categories.ToListAsync();
+            List<CategoryDTO> categoryDTOs = new List<CategoryDTO>();
             if (categories == null || !categories.Any())
             {
                 return NotFound("Hiç kategori bulunamadı.");
             }
-            return Ok(categories);
+            foreach (var category in categories)
+            {
+                categoryDTOs.Add(new CategoryDTO(category));
+            }
+            return Ok(categoryDTOs);
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> GetCategory(int id)
+        public async Task<ActionResult<Category>> GetCategory(Guid id)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
             {
                 return NotFound($"Aradığınız kategori bulunamadı.");
             }
-            return Ok(category);
+            CategoryDTO categoryDTO = new CategoryDTO(category);
+            return Ok(categoryDTO);
         }
         [HttpPost]
         public async Task<ActionResult<Category>> AddCategory([FromBody] Category newCategory)
@@ -50,7 +57,7 @@ namespace WebApplication1.Controllers
             return CreatedAtAction(nameof(GetCategory), new { id = newCategory.Id }, newCategory);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, [FromBody] Category updatedCategory)
+        public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] Category updatedCategory)
         {
             if (id != updatedCategory.Id)
             {
@@ -68,7 +75,7 @@ namespace WebApplication1.Controllers
             return NoContent();
         }
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCategory(int id)
+        public async Task<IActionResult> DeleteCategory(Guid id)
         {
             var category = await _context.Categories.FindAsync(id);
             if (category == null)
