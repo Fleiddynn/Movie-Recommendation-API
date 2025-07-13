@@ -6,22 +6,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Controllers;
 using WebApplication1.Entitites;
-using WebApplication1.DbContexts.CategoryData;
+using WebApplication1.DbContexts;
 using Xunit;
 
 namespace unitTests
 {
     public class MovieCategoryTest
     {
-        private CategoryDbContext GetDbContext(string dbName)
+        private AllDbContext GetDbContext(string dbName)
         {
-            var options = new DbContextOptionsBuilder<CategoryDbContext>()
+            var options = new DbContextOptionsBuilder<AllDbContext>()
                 .UseInMemoryDatabase(databaseName: dbName)
                 .Options;
-            return new CategoryDbContext(options);
+            return new AllDbContext(options);
         }
 
-        private CategoriesController GetController(CategoryDbContext context)
+        private CategoriesController GetController(AllDbContext context)
         {
             return new CategoriesController(context);
         }
@@ -30,7 +30,7 @@ namespace unitTests
         public async Task GetCategories()
         {
             var context = GetDbContext(nameof(GetCategories));
-            context.Categories.Add(new Category { Id = 1, Name = "Test", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+            context.Categories.Add(new Category { Id = new Guid(), Name = "Test", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
             context.SaveChanges();
             var controller = GetController(context);
 

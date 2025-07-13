@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Entitites;
-using WebApplication1.DbContexts.CategoryData;
 using WebApplication1.Dto;
+using WebApplication1.DbContexts;
 
 namespace WebApplication1.Controllers
 {
@@ -13,9 +13,9 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class CategoriesController : ControllerBase
     {
-        private readonly CategoryDbContext _context;
+        private readonly AllDbContext _context;
 
-        public CategoriesController(CategoryDbContext context)
+        public CategoriesController(AllDbContext context)
         {
             _context = context;
         }

@@ -5,8 +5,8 @@ namespace WebApplication1.DbContexts.MovieRecData
 {
     public class MovieRepository : IMovieRepository
     {
-        private readonly MDbContext _context;
-        public MovieRepository(MDbContext context)
+        private readonly AllDbContext _context;
+        public MovieRepository(AllDbContext context)
         {
             _context = context;
         }

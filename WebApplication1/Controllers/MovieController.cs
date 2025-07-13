@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.Entitites;
 using WebApplication1.DbContexts.MovieRecData;
+using WebApplication1.DbContexts;
 
 namespace WebApplication1.Controllers
 {
@@ -15,7 +16,7 @@ namespace WebApplication1.Controllers
     {
         private readonly MovieRepository _movieRepository;
 
-        public MoviesController(MDbContext context)
+        public MoviesController(AllDbContext context)
         {
             _movieRepository = new MovieRepository(context);
         }

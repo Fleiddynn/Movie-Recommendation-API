@@ -4,8 +4,8 @@ namespace WebApplication1.DbContexts.UserData
 {
     public class UserRepository : IUserRepository
     {
-        private readonly UserDbContext _context;
-        public UserRepository(UserDbContext context)
+        private readonly AllDbContext _context;
+        public UserRepository(AllDbContext context)
         {
             _context = context;
         }

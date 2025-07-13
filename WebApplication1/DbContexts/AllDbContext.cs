@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace WebApplication1.DbContexts
 {
-    public class DbContext : IdentityDbContext<User>
+    public class AllDbContext : IdentityDbContext<User>
     {
-        public DbContext(DbContextOptions<DbContext> options)
+        public AllDbContext(DbContextOptions<AllDbContext> options)
             : base(options)
         {
         }
