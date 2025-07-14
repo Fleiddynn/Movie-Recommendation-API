@@ -1,7 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using WebApplication1.MovieRecData;
-using WebApplication1.MovieData;
-using WebApplication1.UserData;
 using Npgsql;
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
@@ -12,27 +9,21 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Facebook;
+using WebApplication1.DbContexts;
+using WebApplication1.DbContexts.UserData;
+using WebApplication1.DbContexts.MovieRecData;
 
 
 Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-var movieConnectionString = builder.Configuration.GetConnectionString("MovieConnection");
+builder.Services.AddDbContext<AllDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-var movieDataSourceBuilder = new NpgsqlDataSourceBuilder(movieConnectionString);
-movieDataSourceBuilder.EnableDynamicJson();
-var movieDataSource = movieDataSourceBuilder.Build();
-
-builder.Services.AddDbContext<MDbContext>(options =>
-{
-    options.UseNpgsql(movieDataSource);
-});
-
-var userConnectionString = builder.Configuration.GetConnectionString("UserConnection");
-
-var userDataSourceBuilder = new NpgsqlDataSourceBuilder(userConnectionString);
-var userDataSource = userDataSourceBuilder.Build();
+builder.Services.AddIdentity<User, IdentityRole>()
+    .AddEntityFrameworkStores<AllDbContext>()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddAuthentication(options =>
 {
@@ -55,13 +46,7 @@ builder.Services.AddAuthentication(options =>
         options.SaveTokens = true;
     });
 
-builder.Services.AddDbContext<UserDbContext>(options =>
-{
-    options.UseNpgsql(userDataSource);
-});
 
-builder.Services.AddIdentity<User, IdentityRole>()
-   .AddEntityFrameworkStores<UserDbContext>();
 
 builder.Services.AddControllers()
     .AddNewtonsoftJson();
@@ -102,11 +87,8 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var movieDbContext = scope.ServiceProvider.GetRequiredService<MDbContext>();
-    movieDbContext.Database.Migrate();
-
-    var userDbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
-    userDbContext.Database.Migrate();
+    var AllDbContext = scope.ServiceProvider.GetRequiredService<AllDbContext>();
+    AllDbContext.Database.Migrate();
 }
 
 if (app.Environment.IsDevelopment())

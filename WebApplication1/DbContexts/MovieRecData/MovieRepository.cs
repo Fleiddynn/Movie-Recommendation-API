@@ -1,12 +1,12 @@
-﻿using WebApplication1.Entitites;
-using WebApplication1.MovieRecData;
+﻿using Microsoft.EntityFrameworkCore;
+using WebApplication1.Entitites;
 
-namespace WebApplication1.MovieData
+namespace WebApplication1.DbContexts.MovieRecData
 {
     public class MovieRepository : IMovieRepository
     {
-        private readonly MDbContext _context;
-        public MovieRepository(MDbContext context)
+        private readonly AllDbContext _context;
+        public MovieRepository(AllDbContext context)
         {
             _context = context;
         }
@@ -19,6 +19,12 @@ namespace WebApplication1.MovieData
         {
             var movie = _context.Movies.Find(id);
             return Task.FromResult(movie);
+        }
+        public async Task<List<Movie>> GetMoviesByCategoryAsync(int categoryId)
+        {
+            return await _context.Movies
+                .Where(m => m.Categories.Contains(categoryId))
+                .ToListAsync();
         }
         public Task<Movie> Create(Movie movie)
         {

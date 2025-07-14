@@ -8,15 +8,16 @@ namespace WebApplication1.Entitites
     {
         [Key]
         public int Id { get; set; }
+        public ICollection<MovieCategory> MovieCategories { get; set; } = new List<MovieCategory>();
         public string Title { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public List<string> Cast { get; set; } = new List<string>();
+        public string? Description { get; set; }
+        public int Duration { get; set; }
         public string Director { get; set; } = string.Empty;
-        public List<string> Categories { get; set; } = new List<string>();
+        public List<int> Categories { get; set; } = [];
         public double IMDB { get; set; }
         public int Length { get; set; }
-        public DateOnly ReleaseDate { get; set; }
-
-
+        public DateOnly? ReleaseDate { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 }

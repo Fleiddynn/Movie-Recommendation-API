@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.Entitites;
-using WebApplication1.UserData;
+using WebApplication1.DbContexts.UserData;
 using BCrypt.Net;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -11,6 +11,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.DbContexts;
 
 namespace WebApplication1.Controllers
 {
@@ -19,7 +20,7 @@ namespace WebApplication1.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
-        public UserController(UserDbContext context)
+        public UserController(AllDbContext context)
         {
             _userRepository = new UserRepository(context);
         }

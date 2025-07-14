@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.JsonPatch;
-using WebApplication1.MovieRecData;
 using WebApplication1.Entitites;
-using WebApplication1.MovieData;
+using WebApplication1.DbContexts.MovieRecData;
+using WebApplication1.DbContexts;
 
 namespace WebApplication1.Controllers
 {
     [ApiController]
+
     [Route("api/[controller]")]
     public class MoviesController : ControllerBase
     {
         private readonly MovieRepository _movieRepository;
 
-        public MoviesController(MDbContext context)
+        public MoviesController(AllDbContext context)
         {
             _movieRepository = new MovieRepository(context);
         }
@@ -74,11 +75,12 @@ namespace WebApplication1.Controllers
 
                 movie.Title = updatedMovie.Title;
                 movie.Description = updatedMovie.Description;
-                movie.Cast = updatedMovie.Cast;
+                movie.Duration = updatedMovie.Duration;
                 movie.Director = updatedMovie.Director;
                 movie.Categories = updatedMovie.Categories;
                 movie.Length = updatedMovie.Length;
                 movie.ReleaseDate = updatedMovie.ReleaseDate;
+                movie.UpdatedAt = DateTime.UtcNow;
 
                 await _movieRepository.Update(movie);
             }
@@ -139,6 +141,39 @@ namespace WebApplication1.Controllers
             await _movieRepository.Update(movieToDelete);
 
             return Ok();
+        }
+
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMoviesByCategory(int categoryId)
+        {
+            var movies = await _movieRepository.GetMoviesByCategoryAsync(categoryId);
+            if (movies == null || !movies.Any())
+            {
+                return NotFound($"Bu kategoriye ait film bulunamadı.");
+            }
+            List<MovieDTO> movieDTOs = new List<MovieDTO>();
+            foreach (var movie in movies)
+            {
+                movieDTOs.Add(new MovieDTO(movie));
+            }
+            return Ok(movieDTOs);
+        }
+
+        [HttpPost("{movieId}/addcategory/{categoryId}")]
+        public async Task<IActionResult> AddCategoryToMovie(int movieId, int categoryId)
+        {
+            var movie = await _movieRepository.GetMovieByIdAsync(movieId);
+            if (movie == null)
+            {
+                return NotFound($"Aradığınız film bulunamadı.");
+            }
+            if (movie.Categories.Contains(categoryId))
+            {
+                return BadRequest("Bu kategori zaten filme eklenmiş.");
+            }
+            movie.Categories.Add(categoryId);
+            await _movieRepository.Update(movie);
+            return Ok(new { message = "Kategori filme başarıyla eklendi." });
         }
     }
 }
