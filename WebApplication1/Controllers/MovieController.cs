@@ -144,7 +144,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("category/{categoryId}")]
-        public async Task<ActionResult<IEnumerable<Movie>>> GetMoviesByCategory(int categoryId)
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMoviesByCategory(Guid categoryId)
         {
             var movies = await _movieRepository.GetMoviesByCategoryAsync(categoryId);
             if (movies == null || !movies.Any())
@@ -160,7 +160,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost("{movieId}/addcategory/{categoryId}")]
-        public async Task<IActionResult> AddCategoryToMovie(int movieId, int categoryId)
+        public async Task<IActionResult> AddCategoryToMovie(int movieId, Guid categoryId)
         {
             var movie = await _movieRepository.GetMovieByIdAsync(movieId);
             if (movie == null)
@@ -174,6 +174,25 @@ namespace WebApplication1.Controllers
             movie.Categories.Add(categoryId);
             await _movieRepository.Update(movie);
             return Ok(new { message = "Kategori filme başarıyla eklendi." });
+        }
+        [HttpGet("category/{categoryId}/page/{pageNumber}/size/{pageSize}")]
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMoviesByCategoryWithPagination(Guid categoryId, int pageNumber, int pageSize)
+        {
+            if (pageNumber <= 0 || pageSize <= 0)
+            {
+                return BadRequest("Sayfa numarası ve sayfa boyutu 0'dan büyük olmalıdır.");
+            }
+            var movies = await _movieRepository.GetMoviesByCategoryAsync(categoryId, pageNumber, pageSize);
+            if (movies == null || !movies.Any())
+            {
+                return NotFound($"Bu kategoriye ait film bulunamadı.");
+            }
+            List<MovieDTO> movieDTOs = new List<MovieDTO>();
+            foreach (var movie in movies)
+            {
+                movieDTOs.Add(new MovieDTO(movie));
+            }
+            return Ok(movieDTOs);
         }
     }
 }

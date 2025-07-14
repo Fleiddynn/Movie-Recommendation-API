@@ -6,9 +6,11 @@ namespace WebApplication1.DbContexts.MovieRecData
     {
         public Task<List<Movie>> GetMoviesAsync();
         public Task<Movie?> GetMovieByIdAsync(int id);
-        public Task<List<Movie>> GetMoviesByCategoryAsync(int categoryId);
+        public Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId);
         public Task<Movie> Create(Movie movie);
         public Task<Movie?> Update(Movie movie);
         public Task<Movie?> Delete(int id);
+        public Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId, int pageNumber, int pageSize);
+
     }
 }

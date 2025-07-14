@@ -20,7 +20,7 @@ namespace WebApplication1.DbContexts.MovieRecData
             var movie = _context.Movies.Find(id);
             return Task.FromResult(movie);
         }
-        public async Task<List<Movie>> GetMoviesByCategoryAsync(int categoryId)
+        public async Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId)
         {
             return await _context.Movies
                 .Where(m => m.Categories.Contains(categoryId))
@@ -47,6 +47,14 @@ namespace WebApplication1.DbContexts.MovieRecData
                 _context.SaveChanges();
             }
             return Task.FromResult(movie);
+        }
+        public async Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId, int pageNumber, int pageSize)
+        {
+            return await _context.Movies
+                .Where(m => m.Categories.Contains(categoryId))
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
     }
 }
