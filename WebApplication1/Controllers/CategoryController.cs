@@ -46,15 +46,17 @@ namespace WebApplication1.Controllers
             return Ok(categoryDTO);
         }
         [HttpPost]
-        public async Task<ActionResult<Category>> AddCategory([FromBody] Category newCategory)
+        public async Task<ActionResult<Category>> AddCategory([FromBody] CategoryDTO newCategoryDTO)
         {
-            if (newCategory == null || string.IsNullOrWhiteSpace(newCategory.Name))
+            if (newCategoryDTO == null || string.IsNullOrWhiteSpace(newCategoryDTO.Name))
             {
                 return BadRequest("Kategori adı boş olamaz.");
             }
-            _context.Categories.Add(newCategory);
+
+            var category = new Category { Name = newCategoryDTO.Name, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            _context.Categories.Add(category);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetCategory), new { id = newCategory.Id }, newCategory);
+            return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
         }
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] Category updatedCategory)

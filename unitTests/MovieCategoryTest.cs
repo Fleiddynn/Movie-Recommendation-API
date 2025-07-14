@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication1.Controllers;
 using WebApplication1.Entitites;
 using WebApplication1.DbContexts;
+using WebApplication1.Dto;
 using Xunit;
 
 namespace unitTests
@@ -47,8 +48,9 @@ namespace unitTests
             var context = GetDbContext(nameof(AddCategory));
             var controller = GetController(context);
             var newCategory = new Category { Name = "Action", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var categoryDto = new CategoryDTO(newCategory);
 
-            var result = await controller.AddCategory(newCategory);
+            var result = await controller.AddCategory(categoryDto);
 
             var created = Assert.IsType<CreatedAtActionResult>(result.Result);
             var category = Assert.IsType<Category>(created.Value);
