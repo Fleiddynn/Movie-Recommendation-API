@@ -83,6 +83,7 @@ namespace WebApplication1.Controllers
                 movie.UpdatedAt = DateTime.UtcNow;
 
                 await _movieRepository.Update(movie);
+                return Ok(movie);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -137,8 +138,12 @@ namespace WebApplication1.Controllers
                 return NotFound($"Silmeye çalıştığınız film bulunamadı.");
             }
 
-            _movieRepository.Delete(id);
-            await _movieRepository.Update(movieToDelete);
+            var deletedMovie = await _movieRepository.Delete(id); 
+
+            if (deletedMovie == null)
+            {
+                return NotFound($"Silmeye çalıştığınız film bulunamadı.");
+            }
 
             return Ok();
         }
@@ -186,6 +191,21 @@ namespace WebApplication1.Controllers
             if (movies == null || !movies.Any())
             {
                 return NotFound($"Bu kategoriye ait film bulunamadı.");
+            }
+            List<MovieDTO> movieDTOs = new List<MovieDTO>();
+            foreach (var movie in movies)
+            {
+                movieDTOs.Add(new MovieDTO(movie));
+            }
+            return Ok(movieDTOs);
+        }
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies(string? sortBy = null, string? sortOrder = null)
+        {
+            var movies = await _movieRepository.GetMoviesAsync(sortBy, sortOrder);
+            if (movies == null || !movies.Any())
+            {
+                return NotFound("Hiç film bulunamadı.");
             }
             List<MovieDTO> movieDTOs = new List<MovieDTO>();
             foreach (var movie in movies)

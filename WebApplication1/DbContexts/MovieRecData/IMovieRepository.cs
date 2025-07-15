@@ -11,6 +11,6 @@ namespace WebApplication1.DbContexts.MovieRecData
         public Task<Movie?> Update(Movie movie);
         public Task<Movie?> Delete(int id);
         public Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId, int pageNumber, int pageSize);
-
+        public Task<List<Movie>> GetMoviesAsync(string? sortBy, string? sortOrder);
     }
 }

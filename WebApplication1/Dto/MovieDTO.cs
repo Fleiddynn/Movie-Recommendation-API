@@ -12,12 +12,12 @@ namespace WebApplication1.Entitites
         public string? Description { get; set; }
         public int Duration { get; set; }
         public string Director { get; set; } = string.Empty;
-        public List<int> Categories { get; set; } = [];
+        public List<Guid> Categories { get; set; } = [];
         public double IMDB { get; set; }
         public int Length { get; set; }
         public DateOnly? ReleaseDate { get; set; }
 
-        public MovieDTO(int id, string title, string description, int duration, string director, List<int> categories, double imdb, int length, DateOnly releaseDate) 
+        public MovieDTO(int id, string title, string description, int duration, string director, List<Guid> categories, double imdb, int length, DateOnly releaseDate) 
         {
             Id = id;
             Title = title;
