@@ -20,7 +20,7 @@ namespace WebApplication1.DbContexts.MovieRecData
             var movie = _context.Movies.Find(id);
             return Task.FromResult(movie);
         }
-        public async Task<List<Movie>> GetMoviesByCategoryAsync(int categoryId)
+        public async Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId)
         {
             return await _context.Movies
                 .Where(m => m.Categories.Contains(categoryId))
@@ -47,6 +47,59 @@ namespace WebApplication1.DbContexts.MovieRecData
                 _context.SaveChanges();
             }
             return Task.FromResult(movie);
+        }
+        public async Task<List<Movie>> GetMoviesByCategoryAsync(Guid categoryId, int pageNumber, int pageSize)
+        {
+            return await _context.Movies
+                .Where(m => m.Categories.Contains(categoryId))
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+        public async Task<List<Movie>> GetMoviesAsync(string? sortBy, string? sortOrder)
+        {
+            IQueryable<Movie> movies = _context.Movies;
+
+            if (!string.IsNullOrWhiteSpace(sortBy))
+            {
+                switch (sortBy.ToLowerInvariant())
+                {
+                    case "title":
+                        movies = (sortOrder?.ToLowerInvariant() == "desc") ?
+                            movies.OrderByDescending(m => m.Title) :
+                            movies.OrderBy(m => m.Title);
+                        break;
+                    case "imdb":
+                        movies = (sortOrder?.ToLowerInvariant() == "desc") ?
+                            movies.OrderByDescending(m => m.IMDB) :
+                            movies.OrderBy(m => m.IMDB);
+                        break;
+                    case "releasedate":
+                        movies = (sortOrder?.ToLowerInvariant() == "desc") ?
+                            movies.OrderByDescending(m => m.ReleaseDate) :
+                            movies.OrderBy(m => m.ReleaseDate);
+                        break;
+                    case "duration":
+                        movies = (sortOrder?.ToLowerInvariant() == "desc") ?
+                            movies.OrderByDescending(m => m.Duration) :
+                            movies.OrderBy(m => m.Duration);
+                        break;
+                    case "createdat":
+                        movies = (sortOrder?.ToLowerInvariant() == "desc") ?
+                            movies.OrderByDescending(m => m.CreatedAt) :
+                            movies.OrderBy(m => m.CreatedAt);
+                        break;
+                    default:
+                        movies = movies.OrderBy(m => m.Id);
+                        break;
+                }
+            }
+            else
+            {
+                movies = movies.OrderBy(m => m.Id);
+            }
+
+            return await movies.ToListAsync();
         }
     }
 }
