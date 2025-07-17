@@ -13,6 +13,7 @@ namespace WebApplication1.DbContexts
         public DbSet<Movie> Movies { get; set; } = null!;
         public DbSet<Category> Categories { get; set; } = null!;
         public DbSet<MovieCategory> MovieCategories { get; set; } = null!;
+        public DbSet<UserReview> UserReviews { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -53,6 +54,21 @@ namespace WebApplication1.DbContexts
                 entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.updated_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
+            modelBuilder.Entity<UserReview>(entity =>
+            {
+                entity.Property(e => e.Note);
+                entity.Property(e => e.Rating).IsRequired();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+            modelBuilder.Entity<UserReview>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserReviews)
+                .HasForeignKey(ur => ur.UserId);
+            modelBuilder.Entity<UserReview>()
+                .HasOne(ur => ur.Movie)
+                .WithMany(m => m.UserReviews)
+                .HasForeignKey(ur => ur.MovieId);
         }
     }
 }
