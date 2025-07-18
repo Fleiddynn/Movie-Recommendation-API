@@ -2,6 +2,8 @@
 using WebApplication1.Entitites;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.DbContexts;
+using WebApplication1.DbContexts.MovieRecData;
+using WebApplication1.Dto;
 
 namespace WebApplication1.Controllers
 {
@@ -10,46 +12,55 @@ namespace WebApplication1.Controllers
     [Route("api/[controller]")]
     public class ReviewController : ControllerBase
     {
-        private readonly AllDbContext _context;
+        private readonly ReviewRepository _reviewRepository;
+        private readonly MovieRepository _movieRepository;
         public ReviewController(AllDbContext context)
         {
-            _context = context;
+            _reviewRepository = new ReviewRepository(context);
+            _movieRepository = new MovieRepository(context);
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserReview>>> GetAllReviews()
+        public async Task<ActionResult<IEnumerable<Review>>> GetAllReviews()
         {
-            var reviews = await _context.UserReviews.ToListAsync();
+            var reviews = await _reviewRepository.GetReviewsAsync();
+            List<ReviewDTO> reviewDTOs = new List<ReviewDTO>();
             if (reviews == null || !reviews.Any())
             {
                 return NotFound("Hiç kullanıcı incelemesi bulunamadı.");
             }
-            return Ok(reviews);
+            foreach (var review in reviews)
+            {
+                reviewDTOs.Add(new ReviewDTO(review));
+            }
+            return Ok(reviewDTOs);
 
         }
 
         [HttpGet("{movieId}")]
-        public async Task<ActionResult<IEnumerable<UserReview>>> GetReviewsByMovieId(int movieId)
+        public async Task<ActionResult<IEnumerable<Review>>> GetReviewsByMovieId(int movieId)
         {
-            var reviews = await _context.UserReviews
-                .Where(r => r.MovieId == movieId)
-                .ToListAsync();
+            var reviews = await _reviewRepository.GetReviewByMovieIdAsync(movieId);
+            List<ReviewDTO> reviewDTOs = new List<ReviewDTO>();
             if (reviews == null || !reviews.Any())
             {
                 return NotFound("Bu film için hiç kullanıcı yorumu bulunamadı.");
             }
-            return Ok(reviews);
+            foreach (var review in reviews)
+            {
+                reviewDTOs.Add(new ReviewDTO(review));
+            }
+            return Ok(reviewDTOs);
         }
         [HttpPost]
-        public async Task<ActionResult<UserReview>> AddReview([FromBody] UserReview newReview)
+        public async Task<ActionResult<Review>> AddReview([FromBody] Review newReview)
         {
             if (newReview == null)
             {
                 return BadRequest("İnceleme bilgileri boş olamaz.");
             }
 
-            var existingReview = await _context.UserReviews
-                .FirstOrDefaultAsync(r => r.MovieId == newReview.MovieId && r.UserId == newReview.UserId);
+            var existingReview = await _reviewRepository.GetReviewsByUserAndMovieIdAsync(newReview.UserId, newReview.MovieId);
 
             if (existingReview != null)
             {
@@ -63,13 +74,10 @@ namespace WebApplication1.Controllers
             newReview.CreatedAt = DateTime.Now;
             newReview.UpdatedAt = DateTime.Now;
 
-            _context.UserReviews.Add(newReview);
-            await _context.SaveChangesAsync();
+            await _reviewRepository.Create(newReview);
 
-            var movie = await _context.Movies.FindAsync(newReview.MovieId);
-            var reviewsForMovie = await _context.UserReviews
-                                       .Where(r => r.MovieId == newReview.MovieId)
-                                       .ToListAsync();
+            var movie = await _movieRepository.GetMovieByIdAsync(newReview.MovieId);
+            var reviewsForMovie = await _reviewRepository.GetReviewByMovieIdAsync(newReview.MovieId);
             if (reviewsForMovie.Any())
             {
                 double newAverageRating = reviewsForMovie.Average(r => r.Rating);
@@ -79,18 +87,18 @@ namespace WebApplication1.Controllers
             {
                 movie.IMDB = newReview.Rating;
             }
-            _context.Movies.Update(movie);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetReviewsByMovieId), new { movieId = newReview.MovieId }, newReview);
+            await _movieRepository.Update(movie);
+            ReviewDTO reviewDTO = new ReviewDTO(newReview);
+            return CreatedAtAction(nameof(GetReviewsByMovieId), new { movieId = newReview.MovieId }, reviewDTO);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReview(int id, [FromBody] UserReview updatedReview)
+        public async Task<IActionResult> UpdateReview(int id, [FromBody] Review updatedReview)
         {
             if (id != updatedReview.Id)
             {
                 return BadRequest("İnceleme ID'leri değiştirilemez.");
             }
-            var Review = await _context.UserReviews.FindAsync(id);
+            var Review = await _reviewRepository.GetReviewByIdAsync(id);
             if (Review == null)
             {
                 return NotFound("Güncellenecek inceleme bulunamadı.");
@@ -102,13 +110,12 @@ namespace WebApplication1.Controllers
             }
             Review.Rating = updatedReview.Rating;
             Review.UpdatedAt = DateTime.Now;
-            _context.UserReviews.Update(Review);
-            await _context.SaveChangesAsync();
-            var movie = await _context.Movies.FindAsync(Review.MovieId);
-            var reviewsForMovie = await _context.UserReviews
-                                       .Where(r => r.MovieId == Review.MovieId)
-                                       .ToListAsync();
-            if (reviewsForMovie.Any())
+            await _reviewRepository.Update(Review);
+
+            var movie = await _movieRepository.GetMovieByIdAsync(Review.MovieId);
+            var reviewsForMovie = await _reviewRepository.GetReviewByMovieIdAsync(Review.MovieId);
+
+            if (reviewsForMovie!= null)
             {
                 double newAverageRating = reviewsForMovie.Average(r => r.Rating);
                 movie.IMDB = Math.Round(newAverageRating, 1);
@@ -117,28 +124,24 @@ namespace WebApplication1.Controllers
             {
                 movie.IMDB = Review.Rating;
             }
-            _context.Movies.Update(movie);
-            await _context.SaveChangesAsync();
+            await _movieRepository.Update(movie);
             return Ok();
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteReview(int id)
         {
-            var review = await _context.UserReviews.FindAsync(id);
+            var review = await _reviewRepository.GetReviewByIdAsync(id);
             if (review == null)
             {
                 return NotFound("Silinecek inceleme bulunamadı.");
             }
             var movieId = review.MovieId;
-            _context.UserReviews.Remove(review);
-            await _context.SaveChangesAsync();
+            await _reviewRepository.Delete(id);
 
-            var movie = await _context.Movies.FindAsync(movieId);
+            var movie = await _movieRepository.GetMovieByIdAsync(movieId);
             if (movie != null)
             {
-                var reviewsForMovie = await _context.UserReviews
-                    .Where(r => r.MovieId == movieId)
-                    .ToListAsync();
+                var reviewsForMovie = await _reviewRepository.GetReviewByMovieIdAsync(movieId);
                 if (reviewsForMovie.Any())
                 {
                     double newAverageRating = reviewsForMovie.Average(r => r.Rating);
@@ -148,34 +151,36 @@ namespace WebApplication1.Controllers
                 {
                     movie.IMDB = 0;
                 }
-                _context.Movies.Update(movie);
-                await _context.SaveChangesAsync();
+                await _movieRepository.Update(movie);
             }
             return NoContent();
         }
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<UserReview>>> GetReviewsByUserId(string userId)
+        public async Task<ActionResult<IEnumerable<Review>>> GetReviewsByUserId(string userId)
         {
-            var reviews = await _context.UserReviews
-                .Where(r => r.UserId == userId)
-                .ToListAsync();
+            var reviews = await _reviewRepository.GetReviewsByUserIdAsync(userId);
+            List<ReviewDTO> reviewDTOs = new List<ReviewDTO>();
             if (reviews == null || !reviews.Any())
             {
                 return NotFound("Bu kullanıcı için hiç inceleme bulunamadı.");
             }
-            return Ok(reviews);
+            foreach (var review in reviews)
+            {
+                reviewDTOs.Add(new ReviewDTO(review));
+            }
+            return Ok(reviewDTOs);
 
         }
         [HttpGet("movie/{movieId}/user/{userId}")]
-        public async Task<ActionResult<UserReview>> GetReviewByMovieAndUser(int movieId, string userId)
+        public async Task<ActionResult<Review>> GetReviewByMovieAndUser(int movieId, string userId)
         {
-            var review = await _context.UserReviews
-                .FirstOrDefaultAsync(r => r.MovieId == movieId && r.UserId == userId);
+            var review = await _reviewRepository.GetReviewsByUserAndMovieIdAsync(userId, movieId);
             if (review == null)
             {
                 return NotFound("Bu film ve kullanıcı için inceleme bulunamadı.");
             }
-            return Ok(review);
+            ReviewDTO reviewDTO = new ReviewDTO(review.FirstOrDefault());
+            return Ok(reviewDTO);
         }
 
     }

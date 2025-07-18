@@ -119,13 +119,13 @@ namespace unitTests
         public async Task GetReview()
         {
             var context = GetDbContext(nameof(GetReview));
-            var review = new UserReview { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çkok iyi film bayıldım."};
+            var review = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çkok iyi film bayıldım."};
             context.UserReviews.Add(review);
             context.SaveChanges();
             var controller = new ReviewController(context);
             var result = await controller.GetReviewsByMovieId(review.MovieId);
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var reviews = Assert.IsAssignableFrom<IEnumerable<UserReview>>(okResult.Value);
+            var reviews = Assert.IsAssignableFrom<IEnumerable<Review>>(okResult.Value);
             Assert.Single(reviews);
         }
         [Fact]
@@ -133,12 +133,12 @@ namespace unitTests
         {
             var context = GetDbContext(nameof(AddReview));
             var controller = new ReviewController(context);
-            var newReview = new UserReview { MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım."};
+            var newReview = new Review { MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım."};
             context.Movies.Add(new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
             context.SaveChanges();
             var result = await controller.AddReview(newReview);
             var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var review = Assert.IsType<UserReview>(createdResult.Value);
+            var review = Assert.IsType<Review>(createdResult.Value);
             Assert.Equal("Çok iyi film bayıldım.", review.Note);
         }
         [Fact]
@@ -146,12 +146,12 @@ namespace unitTests
         {
             var context = GetDbContext(nameof(UpdateReview));
             context.Movies.Add(new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
-            var review = new UserReview { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." };
+            var review = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." };
             context.UserReviews.Add(review);
             await context.SaveChangesAsync();
 
             var controller = new ReviewController(context);
-            var updatedReviewData = new UserReview { Id = 1, MovieId = 1, UserId = "1", Rating = 2, Note = "Berbattı." };
+            var updatedReviewData = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 2, Note = "Berbattı." };
             var result = await controller.UpdateReview(updatedReviewData.Id, updatedReviewData);
             Assert.IsType<OkResult>(result);
             var updatedReviewInDb = await context.UserReviews.FindAsync(review.Id);
@@ -167,7 +167,7 @@ namespace unitTests
         {
             var context = GetDbContext(nameof(DeleteReview));
             context.Movies.Add(new Movie { Id = 1, Title = "Test Movie", IMDB = 8 });
-            var review = new UserReview { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." };
+            var review = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." };
             context.UserReviews.Add(review);
             await context.SaveChangesAsync();
 
@@ -185,12 +185,12 @@ namespace unitTests
             var context = GetDbContext(nameof(GetReviewsByMovieId));
             var movie = new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Movies.Add(movie);
-            context.UserReviews.Add(new UserReview { Id = 1, MovieId = movie.Id, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." });
+            context.UserReviews.Add(new Review { Id = 1, MovieId = movie.Id, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." });
             context.SaveChanges();
             var controller = new ReviewController(context);
             var result = await controller.GetReviewsByMovieId(movie.Id);
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var reviews = Assert.IsAssignableFrom<IEnumerable<UserReview>>(okResult.Value);
+            var reviews = Assert.IsAssignableFrom<IEnumerable<Review>>(okResult.Value);
             Assert.Single(reviews);
         }
         [Fact]
