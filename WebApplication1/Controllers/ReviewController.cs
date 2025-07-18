@@ -47,6 +47,22 @@ namespace WebApplication1.Controllers
             {
                 return BadRequest("İnceleme bilgileri boş olamaz.");
             }
+
+            var existingReview = await _context.UserReviews
+                .FirstOrDefaultAsync(r => r.MovieId == newReview.MovieId && r.UserId == newReview.UserId);
+
+            if (existingReview != null)
+            {
+                return BadRequest("Bu kullanıcı zaten bu filmi incelemiş.");
+            }
+            if (newReview.Rating < 0 || newReview.Rating > 10)
+            {
+                return BadRequest("Verilen puan 0 ila 10 arasında olmalıdır.");
+            }
+
+            newReview.CreatedAt = DateTime.Now;
+            newReview.UpdatedAt = DateTime.Now;
+
             _context.UserReviews.Add(newReview);
             await _context.SaveChangesAsync();
 
@@ -80,6 +96,10 @@ namespace WebApplication1.Controllers
                 return NotFound("Güncellenecek inceleme bulunamadı.");
             }
             Review.Note = updatedReview.Note;
+            if (updatedReview.Rating < 0 || updatedReview.Rating > 10)
+            {
+                return BadRequest("Verilen puan 0 ila 10 arasında olmalıdır.");
+            }
             Review.Rating = updatedReview.Rating;
             Review.UpdatedAt = DateTime.Now;
             _context.UserReviews.Update(Review);
@@ -109,12 +129,32 @@ namespace WebApplication1.Controllers
             {
                 return NotFound("Silinecek inceleme bulunamadı.");
             }
+            var movieId = review.MovieId;
             _context.UserReviews.Remove(review);
             await _context.SaveChangesAsync();
+
+            var movie = await _context.Movies.FindAsync(movieId);
+            if (movie != null)
+            {
+                var reviewsForMovie = await _context.UserReviews
+                    .Where(r => r.MovieId == movieId)
+                    .ToListAsync();
+                if (reviewsForMovie.Any())
+                {
+                    double newAverageRating = reviewsForMovie.Average(r => r.Rating);
+                    movie.IMDB = Math.Round(newAverageRating, 1);
+                }
+                else
+                {
+                    movie.IMDB = 0;
+                }
+                _context.Movies.Update(movie);
+                await _context.SaveChangesAsync();
+            }
             return NoContent();
         }
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<UserReview>>> GetReviewsByUserId(int userId)
+        public async Task<ActionResult<IEnumerable<UserReview>>> GetReviewsByUserId(string userId)
         {
             var reviews = await _context.UserReviews
                 .Where(r => r.UserId == userId)
@@ -127,7 +167,7 @@ namespace WebApplication1.Controllers
 
         }
         [HttpGet("movie/{movieId}/user/{userId}")]
-        public async Task<ActionResult<UserReview>> GetReviewByMovieAndUser(int movieId, int userId)
+        public async Task<ActionResult<UserReview>> GetReviewByMovieAndUser(int movieId, string userId)
         {
             var review = await _context.UserReviews
                 .FirstOrDefaultAsync(r => r.MovieId == movieId && r.UserId == userId);
