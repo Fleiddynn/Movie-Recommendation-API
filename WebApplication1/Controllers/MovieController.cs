@@ -199,20 +199,5 @@ namespace WebApplication1.Controllers
             }
             return Ok(movieDTOs);
         }
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies(string? sortBy = null, string? sortOrder = null)
-        {
-            var movies = await _movieRepository.GetMoviesAsync(sortBy, sortOrder);
-            if (movies == null || !movies.Any())
-            {
-                return NotFound("Hiç film bulunamadı.");
-            }
-            List<MovieDTO> movieDTOs = new List<MovieDTO>();
-            foreach (var movie in movies)
-            {
-                movieDTOs.Add(new MovieDTO(movie));
-            }
-            return Ok(movieDTOs);
-        }
     }
 }

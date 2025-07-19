@@ -7,6 +7,7 @@ namespace WebApplication1.Entitites
 {
     public class User : IdentityUser
     {
+        public ICollection<Review> UserReviews { get; set; } = new List<Review>();
         public required string first_name { get; set; }
         public required string last_name { get; set; }
         public required string email { get; set; }

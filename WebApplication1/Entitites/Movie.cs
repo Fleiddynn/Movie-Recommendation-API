@@ -9,6 +9,7 @@ namespace WebApplication1.Entitites
         [Key]
         public int Id { get; set; }
         public ICollection<MovieCategory> MovieCategories { get; set; } = new List<MovieCategory>();
+        public ICollection<Review> UserReviews { get; set; } = new List<Review>();
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Duration { get; set; }

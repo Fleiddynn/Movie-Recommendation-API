@@ -9,7 +9,6 @@
     <IsTestProject>true</IsTestProject>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <BaseOutputPath>..\WebApplication1\bin\</BaseOutputPath>
 
   </PropertyGroup>
 
@@ -17,7 +16,7 @@
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.17" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.18" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.6" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.18" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.18">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
