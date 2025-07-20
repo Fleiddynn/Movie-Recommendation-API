@@ -7,7 +7,7 @@ namespace WebApplication1.Entitites
     public class MovieDTO
     {
         [Key]
-        public int Id { get; set; }
+        public Guid Id { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public int Duration { get; set; }
@@ -17,7 +17,7 @@ namespace WebApplication1.Entitites
         public int Length { get; set; }
         public DateOnly? ReleaseDate { get; set; }
 
-        public MovieDTO(int id, string title, string description, int duration, string director, List<Guid> categories, double imdb, int length, DateOnly releaseDate) 
+        public MovieDTO(Guid id, string title, string description, int duration, string director, List<Guid> categories, double imdb, int length, DateOnly releaseDate) 
         {
             Id = id;
             Title = title;

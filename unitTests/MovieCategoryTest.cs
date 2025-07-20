@@ -57,7 +57,7 @@ namespace unitTests
             var context = GetDbContext(nameof(GetMovieByCategory));
             var category = new Category { Id = Guid.NewGuid(), Name = "Action", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Categories.Add(category);
-            context.Movies.Add(new Movie { Id = 1, Title = "Test Movie", Categories = new List<Guid> { category.Id } });
+            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "Test Movie", Categories = new List<Guid> { category.Id } });
             context.SaveChanges();
             var controller = new MoviesController(context);
             var result = await controller.GetMoviesByCategory(category.Id);
@@ -80,7 +80,7 @@ namespace unitTests
         public async Task UpdateMovie()
         {
             var context = GetDbContext(nameof(UpdateMovie));
-            var movie = new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Movies.Add(movie);
             context.SaveChanges();
             var controller = new MoviesController(context);
@@ -94,7 +94,7 @@ namespace unitTests
         public async Task DeleteMovie()
         {
             var context = GetDbContext(nameof(DeleteMovie));
-            var movie = new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Movies.Add(movie);
             context.SaveChanges();
             var controller = new MoviesController(context);
@@ -106,7 +106,7 @@ namespace unitTests
         public async Task GetMovieById()
         {
             var context = GetDbContext(nameof(GetMovieById));
-            var movie = new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Movies.Add(movie);
             context.SaveChanges();
             var controller = new MoviesController(context);
@@ -119,8 +119,8 @@ namespace unitTests
         public async Task GetReview()
         {
             var context = GetDbContext(nameof(GetReview));
-            var review = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çkok iyi film bayıldım."};
-            context.UserReviews.Add(review);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çkok iyi film bayıldım."};
+            context.Reviews.Add(review);
             context.SaveChanges();
             var controller = new ReviewController(context);
             var result = await controller.GetReviewsByMovieId(review.MovieId);
@@ -133,8 +133,8 @@ namespace unitTests
         {
             var context = GetDbContext(nameof(AddReview));
             var controller = new ReviewController(context);
-            var newReview = new Review { MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım."};
-            context.Movies.Add(new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
+            var newReview = new Review { MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım."};
+            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
             context.SaveChanges();
             var result = await controller.AddReview(newReview);
             var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
@@ -145,16 +145,16 @@ namespace unitTests
         public async Task UpdateReview()
         {
             var context = GetDbContext(nameof(UpdateReview));
-            context.Movies.Add(new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
-            var review = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." };
-            context.UserReviews.Add(review);
+            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
+            var review = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım." };
+            context.Reviews.Add(review);
             await context.SaveChangesAsync();
 
             var controller = new ReviewController(context);
-            var updatedReviewData = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 2, Note = "Berbattı." };
+            var updatedReviewData = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 2, Note = "Berbattı." };
             var result = await controller.UpdateReview(updatedReviewData.Id, updatedReviewData);
             Assert.IsType<OkResult>(result);
-            var updatedReviewInDb = await context.UserReviews.FindAsync(review.Id);
+            var updatedReviewInDb = await context.Reviews.FindAsync(review.Id);
             Assert.NotNull(updatedReviewInDb);
             Assert.Equal("Berbattı.", updatedReviewInDb.Note);
             Assert.Equal(2, updatedReviewInDb.Rating);
@@ -166,15 +166,15 @@ namespace unitTests
         public async Task DeleteReview()
         {
             var context = GetDbContext(nameof(DeleteReview));
-            context.Movies.Add(new Movie { Id = 1, Title = "Test Movie", IMDB = 8 });
-            var review = new Review { Id = 1, MovieId = 1, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." };
-            context.UserReviews.Add(review);
+            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "Test Movie", IMDB = 8 });
+            var review = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım." };
+            context.Reviews.Add(review);
             await context.SaveChangesAsync();
 
             var controller = new ReviewController(context);
             var result = await controller.DeleteReview(review.Id);
             Assert.IsType<NoContentResult>(result);
-            Assert.Null(await context.UserReviews.FindAsync(review.Id));
+            Assert.Null(await context.Reviews.FindAsync(review.Id));
 
             var movieInDb = await context.Movies.FindAsync(1);
             Assert.Equal(0.0, movieInDb.IMDB);
@@ -183,9 +183,9 @@ namespace unitTests
         public async Task GetReviewsByMovieId()
         {
             var context = GetDbContext(nameof(GetReviewsByMovieId));
-            var movie = new Movie { Id = 1, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Movies.Add(movie);
-            context.UserReviews.Add(new Review { Id = 1, MovieId = movie.Id, UserId = "1", Rating = 8, Note = "Çok iyi film bayıldım." });
+            context.Reviews.Add(new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım." });
             context.SaveChanges();
             var controller = new ReviewController(context);
             var result = await controller.GetReviewsByMovieId(movie.Id);

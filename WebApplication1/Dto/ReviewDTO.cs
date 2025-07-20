@@ -6,10 +6,10 @@ namespace WebApplication1.Dto
     public class ReviewDTO
     {
         [Key]
-        public int Id { get; set; }
-        public string UserId { get; set; }
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
         public string UserName { get; set; }
-        public int MovieId { get; set; }
+        public Guid MovieId { get; set; }
         public string MovieName { get; set; }
         public string Note { get; set; } = string.Empty;
         public double Rating { get; set; }

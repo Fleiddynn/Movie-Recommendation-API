@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using WebApplication1.Entitites;
 using WebApplication1.DbContexts.MovieRecData;
 using WebApplication1.DbContexts;
+using WebApplication1.Dto;
 
 namespace WebApplication1.Controllers
 {
@@ -40,7 +41,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<MovieDTO>> GetMovie(int id)
+        public async Task<ActionResult<MovieDTO>> GetMovie(Guid id)
         {
             var movie = await _movieRepository.GetMovieByIdAsync(id);
             MovieDTO movieDTO = new MovieDTO(movie);
@@ -63,7 +64,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMovie(int id, [FromBody] Movie updatedMovie)
+        public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] Movie updatedMovie)
         {
             try
             {
@@ -102,7 +103,7 @@ namespace WebApplication1.Controllers
 
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PartiallyUpdateMovie(int id, [FromBody] JsonPatchDocument<Movie> patchDoc)
+        public async Task<IActionResult> PartiallyUpdateMovie(Guid id, [FromBody] JsonPatchDocument<Movie> patchDoc)
         {
             if (patchDoc.Operations.Any(op => op.path.ToLower() == "/imdb"))
             {
@@ -130,7 +131,7 @@ namespace WebApplication1.Controllers
 
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMovie(int id)
+        public async Task<IActionResult> DeleteMovie(Guid id)
         {
             var movieToDelete = await _movieRepository.GetMovieByIdAsync(id);
             if (movieToDelete == null)  
@@ -165,7 +166,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost("{movieId}/addcategory/{categoryId}")]
-        public async Task<IActionResult> AddCategoryToMovie(int movieId, Guid categoryId)
+        public async Task<IActionResult> AddCategoryToMovie(Guid movieId, Guid categoryId)
         {
             var movie = await _movieRepository.GetMovieByIdAsync(movieId);
             if (movie == null)
@@ -198,6 +199,19 @@ namespace WebApplication1.Controllers
                 movieDTOs.Add(new MovieDTO(movie));
             }
             return Ok(movieDTOs);
+        }
+        [HttpGet("{id}/details")]
+        public async Task<ActionResult<IEnumerable<Movie>>> GetMovieWithAllDetails(Guid id)
+        {
+            var movie = await _movieRepository.GetMovieByIdAsync(id);
+            if (movie == null)
+            {
+                return BadRequest("Ardaığınız film bulunamadı.");
+            }
+            var reviews = await _movieRepository.GetReviewsByMovieAsync(id);
+            var movieDetailsDto = new MovieDetailsDTO(movie, reviews);
+
+            return Ok(movieDetailsDto);
         }
     }
 }

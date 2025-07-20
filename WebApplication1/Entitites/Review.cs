@@ -5,10 +5,10 @@ namespace WebApplication1.Entitites
     public class Review
     {
         [Key]
-        public int Id { get; set; }
-        public string UserId { get; set; }
+        public Guid Id { get; set; }
+        public Guid UserId { get; set; }
         public User User { get; set; } = null!;
-        public int MovieId { get; set; }
+        public Guid MovieId { get; set; }
         public Movie Movie { get; set; } = null!;
         public string Note { get; set; } = string.Empty;
         public double Rating { get; set; }

@@ -21,7 +21,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Review>>> GetAllReviews()
+        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetAllReviews()
         {
             var reviews = await _reviewRepository.GetReviewsAsync();
             List<ReviewDTO> reviewDTOs = new List<ReviewDTO>();
@@ -38,7 +38,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpGet("{movieId}")]
-        public async Task<ActionResult<IEnumerable<Review>>> GetReviewsByMovieId(int movieId)
+        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetReviewsByMovieId(Guid movieId)
         {
             var reviews = await _reviewRepository.GetReviewByMovieIdAsync(movieId);
             List<ReviewDTO> reviewDTOs = new List<ReviewDTO>();
@@ -92,7 +92,7 @@ namespace WebApplication1.Controllers
             return CreatedAtAction(nameof(GetReviewsByMovieId), new { movieId = newReview.MovieId }, reviewDTO);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReview(int id, [FromBody] Review updatedReview)
+        public async Task<IActionResult> UpdateReview(Guid id, [FromBody] Review updatedReview)
         {
             if (id != updatedReview.Id)
             {
@@ -128,7 +128,7 @@ namespace WebApplication1.Controllers
             return Ok();
         }
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteReview(int id)
+        public async Task<IActionResult> DeleteReview(Guid id)
         {
             var review = await _reviewRepository.GetReviewByIdAsync(id);
             if (review == null)
@@ -156,7 +156,7 @@ namespace WebApplication1.Controllers
             return NoContent();
         }
         [HttpGet("user/{userId}")]
-        public async Task<ActionResult<IEnumerable<Review>>> GetReviewsByUserId(string userId)
+        public async Task<ActionResult<IEnumerable<ReviewDTO>>> GetReviewsByUserId(Guid userId)
         {
             var reviews = await _reviewRepository.GetReviewsByUserIdAsync(userId);
             List<ReviewDTO> reviewDTOs = new List<ReviewDTO>();
@@ -172,7 +172,7 @@ namespace WebApplication1.Controllers
 
         }
         [HttpGet("movie/{movieId}/user/{userId}")]
-        public async Task<ActionResult<Review>> GetReviewByMovieAndUser(int movieId, string userId)
+        public async Task<ActionResult<ReviewDTO>> GetReviewByMovieAndUser(Guid movieId, Guid userId)
         {
             var review = await _reviewRepository.GetReviewsByUserAndMovieIdAsync(userId, movieId);
             if (review == null)

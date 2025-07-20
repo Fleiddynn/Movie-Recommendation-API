@@ -14,23 +14,23 @@ namespace WebApplication1.DbContexts
         {
             return await _context.Reviews.ToListAsync();
         }
-        public async Task<Review?> GetReviewByIdAsync(int id)
+        public async Task<Review?> GetReviewByIdAsync(Guid id)
         {
             return await _context.Reviews.FindAsync(id);
         }
-        public async Task<List<Review>> GetReviewByMovieIdAsync(int movieId)
+        public async Task<List<Review>> GetReviewByMovieIdAsync(Guid movieId)
         {
             return await _context.Reviews
                 .Where(r => r.MovieId == movieId)
                 .ToListAsync();
         }
-        public async Task<List<Review>> GetReviewsByUserIdAsync(string userId)
+        public async Task<List<Review>> GetReviewsByUserIdAsync(Guid userId)
         {
             return await _context.Reviews
                 .Where(r => r.UserId == userId)
                 .ToListAsync();
         }
-        public async Task<List<Review>> GetReviewsByUserAndMovieIdAsync(string userId, int movieId)
+        public async Task<List<Review>> GetReviewsByUserAndMovieIdAsync(Guid userId, Guid movieId)
         {
             return await _context.Reviews
                 .Where(r => r.UserId == userId && r.MovieId == movieId)
@@ -48,7 +48,7 @@ namespace WebApplication1.DbContexts
             await _context.SaveChangesAsync();
             return review;
         }
-        public async Task<Review?> Delete(int id)
+        public async Task<Review?> Delete(Guid id)
         {
             var review = await _context.Reviews.FindAsync(id);
             if (review != null)
@@ -58,4 +58,5 @@ namespace WebApplication1.DbContexts
             }
             return review;
         }
+    }
 }

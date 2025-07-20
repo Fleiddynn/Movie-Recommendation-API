@@ -16,7 +16,7 @@ namespace WebApplication1.DbContexts.UserData
             return Task.FromResult(users);
         }
 
-        public Task<User?> GetUserByIdAsync(int id)
+        public Task<User?> GetUserByIdAsync(Guid id)
         {
             var user = _context.Users.Find(id);
             return Task.FromResult(user);
@@ -36,7 +36,7 @@ namespace WebApplication1.DbContexts.UserData
             return Task.FromResult(user);
         }
 
-        public Task<User?> Delete(int id)
+        public Task<User?> Delete(Guid id)
         {
             var user = _context.Users.Find(id);
             if (user != null)

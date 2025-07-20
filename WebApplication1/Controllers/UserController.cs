@@ -40,7 +40,7 @@ namespace WebApplication1.Controllers
             return Ok(userDTOs);
         }
         [HttpGet("{id}")]
-        public async Task<ActionResult<UserDTO>> GetUser(int id)
+        public async Task<ActionResult<UserDTO>> GetUser(Guid id)
         {
             var user = await _userRepository.GetUserByIdAsync(id);
             UserDTO userDTO = new UserDTO(user);
@@ -61,7 +61,7 @@ namespace WebApplication1.Controllers
             }
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.email),
                 new Claim("first_name", user.first_name),
                 new Claim("last_name", user.last_name)
@@ -125,7 +125,7 @@ namespace WebApplication1.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.email),
                 new Claim("first_name", user.first_name),
                 new Claim("last_name", user.last_name)
@@ -196,7 +196,7 @@ namespace WebApplication1.Controllers
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Name, user.email),
                 new Claim("first_name", user.first_name),
                 new Claim("last_name", user.last_name)
@@ -248,7 +248,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserChDTO dto)
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserChDTO dto)
         {
             var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
@@ -284,7 +284,7 @@ namespace WebApplication1.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!await _userRepository.GetUsersAsync()
-                    .ContinueWith(t => t.Result.Any(e => e.Id == id.ToString())))
+                    .ContinueWith(t => t.Result.Any(e => e.Id == id)))
                 {
                     return NotFound($"{id} idsine sahip kullanıcı bulunamadı.");
                 }
@@ -297,7 +297,7 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> PartiallyUpdateUser(int id, [FromBody] UserChDTO dto)
+        public async Task<IActionResult> PartiallyUpdateUser(Guid id, [FromBody] UserChDTO dto)
         {
             var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
@@ -332,7 +332,7 @@ namespace WebApplication1.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!await _userRepository.GetUsersAsync().ContinueWith(t => t.Result.Any(e => e.Id == id.ToString())))
+                if (!await _userRepository.GetUsersAsync().ContinueWith(t => t.Result.Any(e => e.Id == id)))
                 {
                     return NotFound($"{id} idsine sahip kullanıcı bulunamadı.");
                 }
@@ -344,7 +344,7 @@ namespace WebApplication1.Controllers
             return Ok();
         }
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(Guid id)
         {
             var user = await _userRepository.GetUserByIdAsync(id);
             if (user == null)
