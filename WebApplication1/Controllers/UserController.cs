@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using WebApplication1.DbContexts;
+using WebApplication1.DbContexts.MovieRecData;
 
 namespace WebApplication1.Controllers
 {
@@ -20,9 +21,11 @@ namespace WebApplication1.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserRepository _userRepository;
+        private readonly IMovieRepository _MovieRepository;
         public UserController(AllDbContext context)
         {
             _userRepository = new UserRepository(context);
+            _MovieRepository = new MovieRepository(context);
         }
 
         [HttpGet]
@@ -34,7 +37,8 @@ namespace WebApplication1.Controllers
             {
                 return NotFound("Sistemde hiç kullanıcı bulunmadı.");
             }
-            foreach (var user in users){
+            foreach (var user in users)
+            {
                 userDTOs.Add(new UserDTO(user));
             }
             return Ok(userDTOs);
@@ -355,6 +359,66 @@ namespace WebApplication1.Controllers
             await _userRepository.Update(user);
             return NoContent();
 
+        }
+        [HttpGet("watchlist/{id}")]
+        public async Task<ActionResult<IEnumerable<MovieDTO>>> GetWatchlist(Guid id)
+        {
+            var user = await _userRepository.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound($"Aradığınız kullanıcı bulunamadı.");
+            }
+            if (user.watchedMovies == null || !user.watchedMovies.Any())
+            {
+                return NotFound("Kullanıcının izleme listesi boş.");
+            }
+            List<MovieDTO> watchlist = new List<MovieDTO>();
+            foreach (var movieId in user.watchedMovies)
+            {
+                var movie = await _MovieRepository.GetMoviesAsync()
+                    .ContinueWith(t => t.Result.FirstOrDefault(u => u.Id == movieId));
+                if (movie != null)
+                {
+                    watchlist.Add(new MovieDTO(movie));
+                }
+            }
+            return Ok(watchlist);
+        }
+        [HttpPost("watchlist/{id}")]
+        public async Task<IActionResult> AddToWatchlist(Guid id, [FromBody] Guid movieId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound($"Aradığınız kullanıcı bulunamadı.");
+            }
+            if (user.watchedMovies == null)
+            {
+                user.watchedMovies = new List<Guid>();
+            }
+            if (user.watchedMovies.Contains(movieId))
+            {
+                return BadRequest("Bu film zaten izleme listenizde mevcut.");
+            }
+            user.watchedMovies.Add(movieId);
+            await _userRepository.Update(user);
+            return Ok();
+        }
+        [HttpDelete("watchlist/{id}")]
+        public async Task<IActionResult> RemoveFromWatchlist(Guid id, [FromBody] Guid movieId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound($"Aradığınız kullanıcı bulunamadı.");
+            }
+            if (user.watchedMovies == null || !user.watchedMovies.Contains(movieId))
+            {
+                return BadRequest("Bu film izleme listenizde mevcut değil.");
+            }
+            user.watchedMovies.Remove(movieId);
+            await _userRepository.Update(user);
+            return Ok();
         }
     }
 }

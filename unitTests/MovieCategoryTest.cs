@@ -116,49 +116,73 @@ namespace unitTests
             Assert.Equal(movie.Title, returnedMovie.Title);
         }
         [Fact]
-        public async Task GetReview()
+        public async Task GetReviewByMovieId()
         {
-            var context = GetDbContext(nameof(GetReview));
-            var review = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çkok iyi film bayıldım."};
-            context.Reviews.Add(review);
-            context.SaveChanges();
-            var controller = new ReviewController(context);
-            var result = await controller.GetReviewsByMovieId(review.MovieId);
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var reviews = Assert.IsAssignableFrom<IEnumerable<Review>>(okResult.Value);
-            Assert.Single(reviews);
-        }
-        [Fact]
-        public async Task AddReview()
-        {
-            var context = GetDbContext(nameof(AddReview));
-            var controller = new ReviewController(context);
-            var newReview = new Review { MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım."};
-            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
-            context.SaveChanges();
-            var result = await controller.AddReview(newReview);
-            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            var review = Assert.IsType<Review>(createdResult.Value);
-            Assert.Equal("Çok iyi film bayıldım.", review.Note);
-        }
-        [Fact]
-        public async Task UpdateReview()
-        {
-            var context = GetDbContext(nameof(UpdateReview));
-            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) });
-            var review = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım." };
+            var context = GetDbContext(nameof(GetReviewByMovieId));
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
+            context.Movies.Add(movie);
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Reviews.Add(review);
             await context.SaveChangesAsync();
 
             var controller = new ReviewController(context);
-            var updatedReviewData = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 2, Note = "Berbattı." };
+            var result = await controller.GetReviewsByMovieId(movie.Id);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var reviews = Assert.IsAssignableFrom<IEnumerable<ReviewDTO>>(okResult.Value);
+            Assert.Single(reviews);
+            var retrievedReview = reviews.First();
+            Assert.Equal(review.Note, retrievedReview.Note);
+            Assert.Equal(review.Rating, retrievedReview.Rating);
+        }
+        [Fact]
+        public async Task AddReview()
+        {
+            var context = GetDbContext(nameof(GetReviewByMovieId));
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
+            context.Movies.Add(movie);
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Reviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var controller = new ReviewController(context);
+
+            var newReview = new Review { MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım." };
+            var result = await controller.AddReview(newReview);
+            var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+            var reviewDto = Assert.IsType<ReviewDTO>(createdResult.Value);
+            Console.WriteLine(reviewDto);
+            Assert.Equal("Çok iyi film bayıldım.", reviewDto.Note);
+        }
+        [Fact]
+        public async Task UpdateReview()
+        {
+            var context = GetDbContext(nameof(GetReviewByMovieId));
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
+            context.Movies.Add(movie);
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Reviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var controller = new ReviewController(context);
+
+            var updatedReviewData = new Review { Id = review.Id, MovieId = movie.Id, UserId = user.Id, Rating = 2, Note = "Berbattı." };
+
             var result = await controller.UpdateReview(updatedReviewData.Id, updatedReviewData);
             Assert.IsType<OkResult>(result);
+
             var updatedReviewInDb = await context.Reviews.FindAsync(review.Id);
             Assert.NotNull(updatedReviewInDb);
             Assert.Equal("Berbattı.", updatedReviewInDb.Note);
             Assert.Equal(2, updatedReviewInDb.Rating);
-            var movieInDb = await context.Movies.FindAsync(1);
+
+            var movieInDb = await context.Movies.FindAsync(movie.Id);
+            Assert.NotNull(movieInDb);
             Assert.Equal(2.0, movieInDb.IMDB);
             // Bir tane daha review atanıp filmin imdbsi ortalamaya göre updatelenecekmi diye kontorl edilebilir
         }
@@ -166,8 +190,11 @@ namespace unitTests
         public async Task DeleteReview()
         {
             var context = GetDbContext(nameof(DeleteReview));
-            context.Movies.Add(new Movie { Id = Guid.NewGuid(), Title = "Test Movie", IMDB = 8 });
-            var review = new Review { Id = Guid.NewGuid(), MovieId = Guid.NewGuid(), UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım." };
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321", UserName = "SDenem" };
+            context.Users.Add(user);
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
+            context.Movies.Add(movie);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Reviews.Add(review);
             await context.SaveChangesAsync();
 
@@ -176,22 +203,61 @@ namespace unitTests
             Assert.IsType<NoContentResult>(result);
             Assert.Null(await context.Reviews.FindAsync(review.Id));
 
-            var movieInDb = await context.Movies.FindAsync(1);
+            var movieInDb = await context.Movies.FindAsync(movie.Id);
+            Assert.NotNull(movieInDb);
             Assert.Equal(0.0, movieInDb.IMDB);
         }
         [Fact]
         public async Task GetReviewsByMovieId()
         {
-            var context = GetDbContext(nameof(GetReviewsByMovieId));
-            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var context = GetDbContext(nameof(GetReviewByMovieId));
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
             context.Movies.Add(movie);
-            context.Reviews.Add(new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = Guid.NewGuid(), Rating = 8, Note = "Çok iyi film bayıldım." });
-            context.SaveChanges();
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Reviews.Add(review);
+            await context.SaveChangesAsync();
+
             var controller = new ReviewController(context);
             var result = await controller.GetReviewsByMovieId(movie.Id);
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var reviews = Assert.IsAssignableFrom<IEnumerable<Review>>(okResult.Value);
+            var reviews = Assert.IsAssignableFrom<IEnumerable<ReviewDTO>>(okResult.Value);
             Assert.Single(reviews);
+        }
+        [Fact]
+        public async Task GetWatchlist()
+        {
+            var context = GetDbContext(nameof(GetWatchlist));
+            var userId = Guid.NewGuid();
+            var user = new User { Id = userId, first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var movieId = Guid.NewGuid();
+            var movie = new Movie { Id = movieId, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Movies.Add(movie);
+            user.watchedMovies.Add(movie.Id);
+            context.SaveChanges();
+            var controller = new UserController(context);
+            var result = await controller.GetWatchlist(userId);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var watchlist = Assert.IsAssignableFrom<IEnumerable<MovieDTO>>(okResult.Value);
+            Assert.Single(watchlist);
+        }
+        [Fact]
+        public async Task AddToWatchlist()
+        {
+            var context = GetDbContext(nameof(AddToWatchlist));
+            var moiveId = Guid.NewGuid();
+            var movie = new Movie { Id = moiveId, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Movies.Add(movie);
+            var userId = Guid.NewGuid();
+            var user = new User { Id = userId, first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            context.SaveChanges();
+
+            var controller = new UserController(context);
+            var result = await controller.AddToWatchlist(userId, moiveId);
+            Assert.IsType<OkResult>(result);
         }
         [Fact]
         private async Task Deneme()

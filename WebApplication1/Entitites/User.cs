@@ -13,6 +13,7 @@ namespace WebApplication1.Entitites
         public required string email { get; set; }
         public required string password { get; set; }
         public string? social_login_provider { get; set; }
+        public List<Guid>? watchedMovies { get; set; } = new List<Guid>();
         public DateTime created_at { get; set; }
         public DateTime updated_at { get; set; }
     }
