@@ -370,18 +370,12 @@ namespace WebApplication1.Controllers
             }
             if (user.watchedMovies == null || !user.watchedMovies.Any())
             {
-                return NotFound("Kullanıcının izleme listesi boş.");
+                return new List<MovieDTO>();
             }
             List<MovieDTO> watchlist = new List<MovieDTO>();
-            foreach (var movieId in user.watchedMovies)
-            {
-                var movie = await _MovieRepository.GetMoviesAsync()
-                    .ContinueWith(t => t.Result.FirstOrDefault(u => u.Id == movieId));
-                if (movie != null)
-                {
-                    watchlist.Add(new MovieDTO(movie));
-                }
-            }
+            var movies = await _MovieRepository.GetMoviesAsync();
+            watchlist = movies.Where(m => user.watchedMovies.Contains(m.Id)).Select(m => new MovieDTO(m)).ToList();
+
             return Ok(watchlist);
         }
         [HttpPost("watchlist/{id}")]

@@ -46,35 +46,31 @@ namespace WebApplication1.Controllers
             return Ok(categoryDTO);
         }
         [HttpPost]
-        public async Task<ActionResult<Category>> AddCategory([FromBody] CategoryDTO newCategoryDTO)
+        public async Task<ActionResult<Category>> AddCategory([FromBody] CategoryAddDTO newCategoryDTO)
         {
             if (newCategoryDTO == null || string.IsNullOrWhiteSpace(newCategoryDTO.Name))
             {
                 return BadRequest("Kategori adı boş olamaz.");
             }
 
-            var category = new Category { Name = newCategoryDTO.Name, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            var category = new Category { Id = Guid.NewGuid(), Name = newCategoryDTO.Name, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             _context.Categories.Add(category);
             await _context.SaveChangesAsync();
             return CreatedAtAction(nameof(GetCategory), new { id = category.Id }, category);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] Category updatedCategory)
+        public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CategoryAddDTO updatedCategory)
         {
-            if (id != updatedCategory.Id)
-            {
-                return BadRequest("Kategori ID'leri değiştirilemez.");
-            }
             var Category = await _context.Categories.FindAsync(id);
             if (Category == null)
             {
                 return NotFound($"Aradığınız kategori bulunamadı.");
             }
             Category.Name = updatedCategory.Name;
-            Category.UpdatedAt = DateTime.Now;
+            Category.UpdatedAt = DateTime.UtcNow;
             _context.Entry(Category).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok();
         }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCategory(Guid id)
@@ -86,7 +82,7 @@ namespace WebApplication1.Controllers
             }
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
-            return NoContent();
+            return Ok();
         }
 
     }

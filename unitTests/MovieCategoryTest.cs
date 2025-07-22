@@ -26,7 +26,7 @@ namespace unitTests
         public async Task GetCategories()
         {
             var context = GetDbContext(nameof(GetCategories));
-            context.Categories.Add(new Category { Id = new Guid(), Name = "Test", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+            context.Categories.Add(new Category { Id = Guid.NewGuid(), Name = "Aksiyon", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
             context.SaveChanges();
             var controller = GetController(context);
 
@@ -36,16 +36,29 @@ namespace unitTests
             var categories = Assert.IsAssignableFrom<IEnumerable<CategoryDTO>>(okResult.Value);
             Assert.Single(categories);
         }
+        [Fact]
+        public async Task GetCategoryById()
+        {
+            var context = GetDbContext(nameof(GetCategoryById));
+            var category = new Category { Id = Guid.NewGuid(), Name = "Aksiyon", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Categories.Add(category);
+            context.SaveChanges();
+
+            var controller = GetController(context);
+            var result = await controller.GetCategory(category.Id);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var returnedCategory = Assert.IsType<CategoryDTO>(okResult.Value);
+            Assert.Equal(category.Name, returnedCategory.Name);
+        }
 
         [Fact]
         public async Task AddCategory()
         {
             var context = GetDbContext(nameof(AddCategory));
             var controller = GetController(context);
-            var newCategory = new Category { Name = "Action", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
-            var categoryDto = new CategoryDTO(newCategory);
+            var newCategoryDto = new CategoryAddDTO { Name = "Action"};
 
-            var result = await controller.AddCategory(categoryDto);
+            var result = await controller.AddCategory(newCategoryDto);
 
             var created = Assert.IsType<CreatedAtActionResult>(result.Result);
             var category = Assert.IsType<Category>(created.Value);
@@ -64,6 +77,37 @@ namespace unitTests
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var movies = Assert.IsAssignableFrom<IEnumerable<MovieDTO>>(okResult.Value);
             Assert.Single(movies);
+        }
+        [Fact]
+        public async Task UpdateCategory()
+        {
+            var context = GetDbContext(nameof(UpdateCategory));
+            var originalCategory = new Category { Id = Guid.NewGuid(), Name = "Action", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Categories.Add(originalCategory);
+            context.SaveChanges();
+
+            var controller = GetController(context);
+            var updatedName = "Adventure";
+            var categoryDto = new CategoryAddDTO { Name = updatedName };
+            var result = await controller.UpdateCategory(originalCategory.Id, categoryDto);
+            Assert.IsType<OkResult>(result);
+
+            var updatedCategoryInDb = await context.Categories.FindAsync(originalCategory.Id);
+            Assert.NotNull(updatedCategoryInDb);
+            Assert.Equal(updatedName, updatedCategoryInDb.Name);
+        }
+        [Fact]
+        public async Task DeleteCategory()
+        {
+            var context = GetDbContext(nameof(DeleteCategory));
+            var category = new Category { Id = Guid.NewGuid(), Name = "Action", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Categories.Add(category);
+            context.SaveChanges();
+            var controller = GetController(context);
+            var result = await controller.DeleteCategory(category.Id);
+            Assert.IsType<OkResult>(result);
+            var deletedCategory = await context.Categories.FindAsync(category.Id);
+            Assert.Null(deletedCategory);
         }
         [Fact]
         public async Task AddMovie()
@@ -137,6 +181,49 @@ namespace unitTests
             Assert.Equal(review.Rating, retrievedReview.Rating);
         }
         [Fact]
+        public async Task GetReviewByUserId()
+        {
+            var context = GetDbContext(nameof(GetReviewByUserId));
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
+            context.Movies.Add(movie);
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Reviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var controller = new ReviewController(context);
+            var result = await controller.GetReviewsByUserId(user.Id);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var reviews = Assert.IsAssignableFrom<IEnumerable<ReviewDTO>>(okResult.Value);
+            Assert.Single(reviews);
+            var retrievedReview = reviews.First();
+            Assert.Equal(review.Note, retrievedReview.Note);
+            Assert.Equal(review.Rating, retrievedReview.Rating);
+            Assert.Equal(user.Id, retrievedReview.UserId);
+        }
+        [Fact] 
+        public async Task GetReviewByMovieAndUser()
+        {
+            var context = GetDbContext(nameof(GetReviewByMovieAndUser));
+            var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
+            context.Movies.Add(movie);
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Reviews.Add(review);
+            await context.SaveChangesAsync();
+
+            var controller = new ReviewController(context);
+            var result = await controller.GetReviewByMovieAndUser(movie.Id, user.Id);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var reviewDto = Assert.IsType<ReviewDTO>(okResult.Value);
+            Assert.Equal(review.Note, reviewDto.Note);
+            Assert.Equal(review.Rating, reviewDto.Rating);
+            Assert.Equal(user.Id, reviewDto.UserId);
+            Assert.Equal(movie.Id, reviewDto.MovieId);
+        }
+        [Fact]
         public async Task AddReview()
         {
             var context = GetDbContext(nameof(GetReviewByMovieId));
@@ -208,22 +295,29 @@ namespace unitTests
             Assert.Equal(0.0, movieInDb.IMDB);
         }
         [Fact]
-        public async Task GetReviewsByMovieId()
+        public async Task GetAllReviews()
         {
-            var context = GetDbContext(nameof(GetReviewByMovieId));
+            var context = GetDbContext(nameof(GetAllReviews));
+            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321", UserName = "SDenem" };
+            context.Users.Add(user);
             var movie = new Movie { Id = Guid.NewGuid(), Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04) };
             context.Movies.Add(movie);
-            var user = new User { Id = Guid.NewGuid(), first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
-            context.Add(user);
             var review = new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım.", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
             context.Reviews.Add(review);
+            user.Id = Guid.NewGuid();
+            context.Users.Add(user);
+            movie.Id = Guid.NewGuid();
+            context.Movies.Add(movie);
+            context.Reviews.Add(new Review { Id = Guid.NewGuid(), MovieId = movie.Id, UserId = user.Id, Rating = 2, Note = "Berbat fil", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
             await context.SaveChangesAsync();
 
             var controller = new ReviewController(context);
-            var result = await controller.GetReviewsByMovieId(movie.Id);
+            var result = await controller.GetAllReviews();
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var reviews = Assert.IsAssignableFrom<IEnumerable<ReviewDTO>>(okResult.Value);
-            Assert.Single(reviews);
+            Assert.Equal(2, reviews.Count());
+            Assert.Contains(reviews, r => r.Note == "Çok iyi film bayıldım.");
+            Assert.Contains(reviews, r => r.Note == "Berbat fil");
         }
         [Fact]
         public async Task GetWatchlist()
@@ -257,6 +351,23 @@ namespace unitTests
 
             var controller = new UserController(context);
             var result = await controller.AddToWatchlist(userId, moiveId);
+            Assert.IsType<OkResult>(result);
+        }
+        [Fact]
+        public async Task RemoveFromWatchlist()
+        {
+            var context = GetDbContext(nameof(RemoveFromWatchlist));
+            var moiveId = Guid.NewGuid();
+            var movie = new Movie { Id = moiveId, Title = "The Amazing Spiderman 2", Director = "idk", IMDB = 7.4, Length = 243, ReleaseDate = new DateOnly(2011, 05, 04), CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now };
+            context.Movies.Add(movie);
+            var userId = Guid.NewGuid();
+            var user = new User { Id = userId, first_name = "Muzo", last_name = "Heptas", email = "fleiddynn@gmail.com", password = "12334321" };
+            context.Add(user);
+            user.watchedMovies.Add(moiveId);
+            context.SaveChanges();
+
+            var controller = new UserController(context);
+            var result = await controller.RemoveFromWatchlist(userId, moiveId);
             Assert.IsType<OkResult>(result);
         }
         [Fact]
