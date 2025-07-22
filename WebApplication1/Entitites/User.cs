@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace WebApplication1.Entitites
 {
-    public class User : IdentityUser
+    public class User : IdentityUser<Guid>
     {
         public ICollection<Review> UserReviews { get; set; } = new List<Review>();
         public required string first_name { get; set; }

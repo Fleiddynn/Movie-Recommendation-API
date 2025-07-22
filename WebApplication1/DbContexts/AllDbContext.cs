@@ -1,10 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebApplication1.Entitites;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 namespace WebApplication1.DbContexts
 {
-    public class AllDbContext : IdentityDbContext<User>
+    public class AllDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     {
         public AllDbContext(DbContextOptions<AllDbContext> options)
             : base(options)

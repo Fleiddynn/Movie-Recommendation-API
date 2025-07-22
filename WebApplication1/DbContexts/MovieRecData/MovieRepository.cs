@@ -15,7 +15,7 @@ namespace WebApplication1.DbContexts.MovieRecData
             var movies = _context.Movies.ToList();
             return Task.FromResult(movies);
         }
-        public Task<Movie?> GetMovieByIdAsync(int id)
+        public Task<Movie?> GetMovieByIdAsync(Guid id)
         {
             var movie = _context.Movies.Find(id);
             return Task.FromResult(movie);
@@ -38,7 +38,7 @@ namespace WebApplication1.DbContexts.MovieRecData
             _context.SaveChanges();
             return Task.FromResult(movie);
         }
-        public Task<Movie?> Delete(int id)
+        public Task<Movie?> Delete(Guid id)
         {
             var movie = _context.Movies.Find(id);
             if (movie != null)
@@ -101,5 +101,12 @@ namespace WebApplication1.DbContexts.MovieRecData
 
             return await movies.ToListAsync();
         }
+        public async Task<List<Review>> GetReviewsByMovieAsync(Guid id)
+        {
+            return await _context.Reviews
+                .Where(r => r.MovieId == id)
+                .ToListAsync();
+        }
     }
+    
 }
