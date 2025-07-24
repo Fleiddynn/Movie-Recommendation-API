@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebApplication1.DbContexts;
 using WebApplication1.DbContexts.MovieRecData;
 using WebApplication1.Dto;
+using WebApplication1.DbContexts.UserData;
 
 namespace WebApplication1.Controllers
 {
@@ -14,10 +15,12 @@ namespace WebApplication1.Controllers
     {
         private readonly ReviewRepository _reviewRepository;
         private readonly MovieRepository _movieRepository;
+        private readonly UserRepository _userRepository;
         public ReviewController(AllDbContext context)
         {
             _reviewRepository = new ReviewRepository(context);
             _movieRepository = new MovieRepository(context);
+            _userRepository = new UserRepository(context);
         }
 
         [HttpGet]
@@ -53,26 +56,36 @@ namespace WebApplication1.Controllers
             return Ok(reviewDTOs);
         }
         [HttpPost]
-        public async Task<ActionResult<Review>> AddReview([FromBody] Review newReview)
+        public async Task<ActionResult<Review>> AddReview([FromBody] ReviewAddDTO newReviewDto)
         {
-            if (newReview == null)
+            if (newReviewDto == null)
             {
                 return BadRequest("İnceleme bilgileri boş olamaz.");
             }
 
-            var existingReview = await _reviewRepository.GetReviewsByUserAndMovieIdAsync(newReview.UserId, newReview.MovieId);
+            var existingReview = await _reviewRepository.GetReviewsByUserAndMovieIdAsync(newReviewDto.UserId, newReviewDto.MovieId);
 
             if (existingReview != null)
             {
                 return BadRequest("Bu kullanıcı zaten bu filmi incelemiş.");
             }
-            if (newReview.Rating < 0 || newReview.Rating > 10)
+            if (newReviewDto.Rating < 0 || newReviewDto.Rating > 10)
             {
                 return BadRequest("Verilen puan 0 ila 10 arasında olmalıdır.");
             }
 
-            newReview.CreatedAt = DateTime.Now;
-            newReview.UpdatedAt = DateTime.Now;
+            var newReview = new Review
+            {
+                Id = Guid.NewGuid(),
+                UserId = newReviewDto.UserId,
+                User = await _userRepository.GetUserByIdAsync(newReviewDto.UserId),
+                MovieId = newReviewDto.MovieId,
+                Movie = await _movieRepository.GetMovieByIdAsync(newReviewDto.MovieId),
+                Note = newReviewDto.Note,
+                Rating = newReviewDto.Rating,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
 
             await _reviewRepository.Create(newReview);
 
@@ -92,12 +105,8 @@ namespace WebApplication1.Controllers
             return CreatedAtAction(nameof(GetReviewsByMovieId), new { movieId = newReview.MovieId }, reviewDTO);
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateReview(Guid id, [FromBody] Review updatedReview)
+        public async Task<IActionResult> UpdateReview(Guid id, [FromBody] ReviewAddDTO updatedReview)
         {
-            if (id != updatedReview.Id)
-            {
-                return BadRequest("İnceleme ID'leri değiştirilemez.");
-            }
             var Review = await _reviewRepository.GetReviewByIdAsync(id);
             if (Review == null)
             {

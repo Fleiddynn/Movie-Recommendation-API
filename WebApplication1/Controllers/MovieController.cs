@@ -55,16 +55,16 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Movie>> AddMovie([FromBody] Movie newMovie)
+        public async Task<ActionResult<Movie>> AddMovie([FromBody] MovieAddDTO newMovie)
         {
-            _movieRepository.Create(newMovie);
-            await _movieRepository.Update(newMovie);
+            var movie = new Movie { Id = Guid.NewGuid(), Title = newMovie.Title, Length = newMovie.Length, Categories = newMovie.Categories, Description = newMovie.Description, Director = newMovie.Director, Duration = newMovie.Duration, IMDB = newMovie.IMDB, ReleaseDate = newMovie.ReleaseDate, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow};
+            await _movieRepository.Create(movie);
 
-            return CreatedAtAction(nameof(GetMovie), new { id = newMovie.Id }, newMovie);
+            return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] Movie updatedMovie)
+        public async Task<IActionResult> UpdateMovie(Guid id, [FromBody] MovieAddDTO updatedMovie)
         {
             try
             {
@@ -126,7 +126,7 @@ namespace WebApplication1.Controllers
 
             await _movieRepository.Update(movieToPatch);
 
-            return NoContent();
+            return Ok();
         }
 
 
