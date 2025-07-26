@@ -98,7 +98,7 @@ namespace WebApplication1.Controllers
                 return BadRequest($"Güncelleme sırasında bir hata oluştu: {ex.Message}");
             }
 
-            return NoContent();
+            return Ok();
         }
 
 

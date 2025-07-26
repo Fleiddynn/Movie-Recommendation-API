@@ -322,7 +322,7 @@ namespace unitTests
 
             var controller = new ReviewController(context);
 
-            var newReview = new Review { MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım." };
+            var newReview = new ReviewAddDTO { MovieId = movie.Id, UserId = user.Id, Rating = 8, Note = "Çok iyi film bayıldım." };
             var result = await controller.AddReview(newReview);
             var createdResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             var reviewDto = Assert.IsType<ReviewDTO>(createdResult.Value);
@@ -343,9 +343,9 @@ namespace unitTests
 
             var controller = new ReviewController(context);
 
-            var updatedReviewData = new Review { Id = review.Id, MovieId = movie.Id, UserId = user.Id, Rating = 2, Note = "Berbattı." };
+            var updatedReviewData = new ReviewAddDTO { MovieId = movie.Id, UserId = user.Id, Rating = 2, Note = "Berbattı." };
 
-            var result = await controller.UpdateReview(updatedReviewData.Id, updatedReviewData);
+            var result = await controller.UpdateReview(review.Id, updatedReviewData);
             Assert.IsType<OkResult>(result);
 
             var updatedReviewInDb = await context.Reviews.FindAsync(review.Id);
