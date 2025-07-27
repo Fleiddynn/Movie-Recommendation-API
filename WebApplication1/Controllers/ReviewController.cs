@@ -63,12 +63,15 @@ namespace WebApplication1.Controllers
                 return BadRequest("İnceleme bilgileri boş olamaz.");
             }
 
-            var existingReview = await _reviewRepository.GetReviewsByUserAndMovieIdAsync(newReviewDto.UserId, newReviewDto.MovieId);
+            var hasExistingReview = await _reviewRepository
+                .GetReviewsByUserAndMovieIdAsync(newReviewDto.UserId, newReviewDto.MovieId)
+                .ContinueWith(t => t.Result.Any());
 
-            if (existingReview != null)
+            if (hasExistingReview)
             {
                 return BadRequest("Bu kullanıcı zaten bu filmi incelemiş.");
             }
+
             if (newReviewDto.Rating < 0 || newReviewDto.Rating > 10)
             {
                 return BadRequest("Verilen puan 0 ila 10 arasında olmalıdır.");
@@ -83,8 +86,8 @@ namespace WebApplication1.Controllers
                 Movie = await _movieRepository.GetMovieByIdAsync(newReviewDto.MovieId),
                 Note = newReviewDto.Note,
                 Rating = newReviewDto.Rating,
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             await _reviewRepository.Create(newReview);
@@ -118,7 +121,7 @@ namespace WebApplication1.Controllers
                 return BadRequest("Verilen puan 0 ila 10 arasında olmalıdır.");
             }
             Review.Rating = updatedReview.Rating;
-            Review.UpdatedAt = DateTime.Now;
+            Review.UpdatedAt = DateTime.UtcNow;
             await _reviewRepository.Update(Review);
 
             var movie = await _movieRepository.GetMovieByIdAsync(Review.MovieId);
