@@ -367,6 +367,9 @@ namespace WebApplication1.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+                    b.Property<List<Guid>>("watchedMovies")
+                        .HasColumnType("uuid[]");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")

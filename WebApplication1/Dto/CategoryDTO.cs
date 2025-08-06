@@ -4,12 +4,12 @@ namespace WebApplication1.Dto
 {
     public class CategoryDTO
     {
-        public ICollection<MovieCategory> MovieCategories { get; set; } = new List<MovieCategory>();
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
 
         public CategoryDTO(Category c)
         {
-            MovieCategories = c.MovieCategories;
+            Id = c.Id;
             Name = c.Name;
         }
     }

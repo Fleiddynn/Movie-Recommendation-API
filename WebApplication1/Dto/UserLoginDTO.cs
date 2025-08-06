@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace WebApplication1.Entitites
 {
-    public class UserLoginDTO : IdentityUser<Guid>
+    public class UserLoginDTO
     {
         public required string email { get; set; }
         public required string password { get; set; }

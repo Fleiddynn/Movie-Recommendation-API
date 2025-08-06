@@ -237,6 +237,7 @@ namespace WebApplication1.Controllers
 
             var user = new User
             {
+                Id = Guid.NewGuid(),
                 email = dto.email,
                 first_name = dto.first_name,
                 last_name = dto.last_name,
@@ -245,10 +246,9 @@ namespace WebApplication1.Controllers
                 updated_at = DateTime.UtcNow
             };
 
-            _userRepository.Create(user);
-            await _userRepository.Update(user);
+            await _userRepository.Create(user);
 
-            return Ok();
+            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
 
         [HttpPut("{id}")]
@@ -356,9 +356,7 @@ namespace WebApplication1.Controllers
                 return NotFound($"Aradığınız kullanıcı bulunamadı.");
             }
             await _userRepository.Delete(id);
-            await _userRepository.Update(user);
-            return NoContent();
-
+            return Ok();
         }
         [HttpGet("watchlist/{id}")]
         public async Task<ActionResult<IEnumerable<MovieDTO>>> GetWatchlist(Guid id)
@@ -370,18 +368,12 @@ namespace WebApplication1.Controllers
             }
             if (user.watchedMovies == null || !user.watchedMovies.Any())
             {
-                return NotFound("Kullanıcının izleme listesi boş.");
+                return new List<MovieDTO>();
             }
             List<MovieDTO> watchlist = new List<MovieDTO>();
-            foreach (var movieId in user.watchedMovies)
-            {
-                var movie = await _MovieRepository.GetMoviesAsync()
-                    .ContinueWith(t => t.Result.FirstOrDefault(u => u.Id == movieId));
-                if (movie != null)
-                {
-                    watchlist.Add(new MovieDTO(movie));
-                }
-            }
+            var movies = await _MovieRepository.GetMoviesAsync();
+            watchlist = movies.Where(m => user.watchedMovies.Contains(m.Id)).Select(m => new MovieDTO(m)).ToList();
+
             return Ok(watchlist);
         }
         [HttpPost("watchlist/{id}")]

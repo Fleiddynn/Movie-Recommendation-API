@@ -13,8 +13,8 @@ using WebApplication1.DbContexts;
 namespace WebApplication1.Migrations
 {
     [DbContext(typeof(AllDbContext))]
-    [Migration("20250720131614_movieRecDb")]
-    partial class movieRecDb
+    [Migration("20250726124943_MovieRec")]
+    partial class MovieRec
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -369,6 +369,9 @@ namespace WebApplication1.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<List<Guid>>("watchedMovies")
+                        .HasColumnType("uuid[]");
 
                     b.HasKey("Id");
 
