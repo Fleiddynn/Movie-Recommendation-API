@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+    yourproject:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8080:80"
+        environment:
+            - ConnectionStrings:DefaultConnection=Host=localhost;Port=5432;Database=MovieRec_Database;Username=postgres;Password=M4j3R
+            - ASPNETCORE_ENVIRONMENT=Development
+        depends_on:
+            - db
+
+    db:
+        image: postgres:14
+        container_name: postgres_db
+        restart: always
+        environment:
+            POSTGRES_DB: DenemeName
+            POSTGRES_USER: DenemeUser
+            POSTGRES_PASSWORD: DenemePassword
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+
+volumes:
+    postgres_data:
